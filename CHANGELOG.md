@@ -2,6 +2,11 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.2.1] — 2026-11-06
+### Fixed
+- **A new version now shows without closing the app.** It checks for updates every time it comes back to the screen. When a new version arrives it reloads by itself, or after you leave the scoreboard if you are mid-match. The old cache is deleted.
+- The offline cache is now named after the version, so every release replaces it.
+
 ## [0.2.0] — 2026-11-06
 ### Added
 - **Bolo goes gold on every golden point** (and on the star point's third deuce), with his fierce face, because the next point decides the game. His hair turns back to black after the point.

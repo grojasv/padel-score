@@ -1,4 +1,4 @@
-// Checks data/lines.json: node scripts/validate.mjs
+// Checks data/lines.json and the version: node scripts/validate.mjs
 // Every key has ES, CA and EN pools, none empty, each line at most 12 words, with no emoji.
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -23,5 +23,12 @@ for (const [k, pools] of Object.entries(lines)) {
     }
   }
 }
+// One version everywhere: app.js VERSION, the newest CHANGELOG entry and the service worker cache name.
+const version = readFileSync(join(root, 'app.js'), 'utf8').match(/const VERSION = '([^']+)'/)?.[1];
+const logTop = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## \[([^\]]+)\]/m)?.[1];
+const cache = readFileSync(join(root, 'sw.js'), 'utf8').match(/const CACHE = '([^']+)'/)?.[1];
+if (version !== logTop) errors.push(`app.js VERSION ${version} != CHANGELOG ${logTop}`);
+if (cache !== `padel-score-${version}`) errors.push(`sw.js CACHE ${cache} != padel-score-${version}`);
+
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
-console.log(`lines.json ok (${Object.keys(lines).length} keys)`);
+console.log(`lines.json ok (${Object.keys(lines).length} keys), version ${version} matches CHANGELOG and sw.js`);

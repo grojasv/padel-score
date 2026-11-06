@@ -17,7 +17,7 @@ Phone scoreboard for padel and tennis, run by Bolo (a padel ball mascot) with vo
 - Everything that needs a user gesture (speech, AudioContext, mic, wake lock) happens inside the Start tap.
 - The mic is paused while Bolo speaks (anti-echo). The recognition loop restarts itself.
 - The match in progress is saved after every point. A reload never loses it.
-- PWA: **bump `CACHE` in `sw.js` when `SHELL` changes.** Icons: `node scripts/make-icons.mjs` (needs uv).
+- PWA: `CACHE` in `sw.js` is `padel-score-<VERSION>`, so **every release changes it** (validate.mjs checks it). That makes phones install the new worker, drop the old cache and reload. Icons: `node scripts/make-icons.mjs` (needs uv).
 - Check the hub at 320×568 and 390×844 and the scoreboard at 568×320 and 844×390, in light and dark. Run with `python3 -m http.server 8767`.
 - `CHANGELOG.md` (Keep a Changelog + SemVer) is updated in the same commit.
 - Commits use the GitHub noreply email (repo-local git config), never a work address.

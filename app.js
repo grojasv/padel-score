@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.2.0'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.2.1'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -233,6 +233,7 @@
   function route() {
     const r = location.hash.replace(/^#\/?/, '');
     if (r === 'match') { if (!match) openMatch(); return; }
+    if (reloadPending) { location.reload(); return; } // a new version arrived during the match
     closeMatch();
     logLeftover();
     if (r === 'setup') renderSetup(); else renderHub();
@@ -268,7 +269,20 @@
     if (b) setLang(b.dataset.lang);
   });
   window.addEventListener('hashchange', route);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { /* offline cache is optional */ });
+  // Updates: the browser checks sw.js on every open, and we check again whenever the app comes back to the screen
+  // (an installed app resumed from the background never reloads by itself). When a new version takes over, the
+  // page reloads once to run the new code, but never in the middle of a match: it waits until you leave the scoreboard.
+  let reloadPending = false;
+  if ('serviceWorker' in navigator) {
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch(() => { /* offline cache is optional */ });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) return; // first install: nothing old is running
+      if (match) reloadPending = true; else location.reload();
+    });
+  }
 
   fetch('data/lines.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
     .then((l) => { lines = l; setLang(lang); });
