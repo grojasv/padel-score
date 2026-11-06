@@ -265,3 +265,10 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-box .btn { color: #fff; border-color: #fff; background: transparent; }
 .h-box .btn.go { background: var(--go); }
 .history .h-heard { grid-column: 1 / -1; justify-self: start; }
+
+/* Bolo celebrates beside the result (landscape), above it (portrait). */
+.m-finish { flex-direction: row; gap: 16px; }
+.f-bolo { width: min(34vh, 30vw, 180px); flex: none; }
+.f-text { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.m-finish .final sup { font-size: 0.6em; }
+@media (orientation: portrait) { .m-finish { flex-direction: column; } .f-bolo { width: min(40vw, 160px); } .m-finish h2 { font-size: clamp(26px, 9vw, 40px); } }

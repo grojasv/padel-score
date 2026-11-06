@@ -186,7 +186,18 @@
 
     // ---------- clock ----------
     const elapsed = () => Math.max(0, (m.finishedAt || m.pausedAt || Date.now()) - m.startedAt - m.pausedMs);
-    const markFinished = () => { if (m.state.finished && !m.finishedAt) m.finishedAt = m.pausedAt || Date.now(); if (!m.state.finished) m.finishedAt = null; };
+    // At the end the screen may sleep and the mic stops (battery). Undoing out of the finish brings both back.
+    const markFinished = () => {
+      if (m.state.finished && !m.finishedAt) {
+        m.finishedAt = m.pausedAt || Date.now();
+        listener?.stop(); listener = null;
+        try { wake?.release(); } catch { /* gone */ }
+        wake = null;
+      } else if (!m.state.finished && m.finishedAt) {
+        m.finishedAt = null;
+        keepAwake(); startListening();
+      }
+    };
     const limitMs = () => (m.setup.timeLimit || 0) * 60000;
     const fmt = (ms) => {
       const s = Math.max(0, Math.round(ms / 1000));
@@ -345,12 +356,15 @@
       const s = m.state;
       const cols = s.sets.map((x) => (x.kind === 'stb' ? { red: x.tb.red, blue: x.tb.blue } : { red: x.red, blue: x.blue, tb: x.tb }));
       if (!cols.length) return '';
-      const cell = (c, team) => `<td>${c[team]}${c.tb ? `<sup>${c.tb[team]}</sup>` : ''}</td>`;
+      const cell = (c, team) => `<td>${c[team]}${c.tb && c[team] < c[Scoring.other(team)] ? `<sup>${c.tb[team]}</sup>` : ''}</td>`; // 7-6⁵
       return `<table class="sets"><tr class="r">${cols.map((c) => cell(c, 'red')).join('')}</tr><tr class="b">${cols.map((c) => cell(c, 'blue')).join('')}</tr></table>`;
     }
     function badge() {
       const s = m.state;
       if (flash) return flash;
+      const st = Scoring.stakes(s);
+      if (st.red === 'match' || st.blue === 'match') return t(TEXT.matchPoint);
+      if (st.red || st.blue) return t(TEXT.setPoint);
       if (s.lastGame) return t(TEXT.lastGame);
       if (s.tiebreak) return t(s.tiebreak === 'stb' ? TEXT.stb : TEXT.tb);
       if (Scoring.isGolden(s)) return t(TEXT.golden);
@@ -359,13 +373,17 @@
     function finishPanel() {
       const s = m.state;
       const title = s.winner === 'draw' ? t(TEXT.draw) : t(TEXT.winner).replace('{t}', teamLabel(s.winner));
+      const loserTb = (x) => (x.tb ? `<sup>${Math.min(x.tb.red, x.tb.blue)}</sup>` : '');
       return `<div class="m-finish c-${s.winner}">
+        <div class="f-bolo bolo-wrap bounce">${Bolo.svg(s.winner === 'draw' ? 'happy' : 'cheer', { gold: s.winner !== 'draw' })}</div>
+        <div class="f-text">
         <h2>${esc(title)}</h2>
         ${s.endedBy === 'time' ? `<p>${esc(t(TEXT.byTime))}</p>` : ''}
-        <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
+        <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
         ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="undo" type="button">↶ ${esc(t(TEXT.undoLast))}</button>
         <button class="btn go" data-act="save" type="button">${esc(t(TEXT.save))}</button></div>
+        </div>
       </div>`;
     }
     function editPanel() {
@@ -481,7 +499,7 @@
 
     function onVisible() {
       if (document.visibilityState !== 'visible') return;
-      keepAwake();
+      if (!m.state.finished) keepAwake();
       onTick();
       if (listener && !m.pausedAt) listener.resume();
     }

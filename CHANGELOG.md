@@ -2,6 +2,14 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.3.1] — 2026-11-06
+### Fixed
+Found by playing a full match point by point (7-6, 3-6, 10-8 in the super tie-break):
+- **Bolo celebrates on the finish screen.** Before, the result covered him.
+- **"Bola de set" / "Bola de partido" stays on screen** for as long as it is true. Before, it went away after 4 seconds.
+- **Tie-break sets read 7-6⁵,** with only the loser's tie-break points. This applies to the scoreboard and the finish screen.
+- **At the end of the match the screen may sleep and the mic stops,** so a phone left on the finish screen doesn't drain the battery. Undoing the last point turns both back on.
+
 ## [0.3.0] — 2026-11-06
 ### Added
 - **"Lo que oyó Bolo":** a log of every phrase the mic heard, with what it did:
