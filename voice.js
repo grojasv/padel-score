@@ -105,7 +105,7 @@
         if (e.error !== 'no-speech' && e.error !== 'aborted') opts.onHeard?.({ text: e.error, cmd: null, outcome: 'error' });
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; state('denied'); return; }
         if (e.error === 'language-not-supported' && !fallback) { fallback = true; return; }
-        if (e.error === 'network') { backoff = Math.min(30000, (backoff || 1000) * 2); state('error'); }
+        if (e.error === 'network' || e.error === 'audio-capture') { backoff = Math.min(30000, (backoff || 1000) * 2); state('error'); }
       };
       rec.onend = () => {
         rec = null;

@@ -45,6 +45,8 @@
     heardEmpty: { es: 'Todavía no ha oído nada.', ca: 'Encara no ha sentit res.', en: 'Nothing heard yet.' },
     copy: { es: 'Copiar para enviar', ca: 'Copia per enviar', en: 'Copy to send' },
     copied: { es: 'Copiado', ca: 'Copiat', en: 'Copied' },
+    micBlocked: { es: 'Micrófono bloqueado: toca aquí para permitirlo', ca: 'Micròfon bloquejat: toca aquí per permetre’l', en: 'Microphone blocked: tap here to allow it' },
+    micHow: { es: 'Si no sale la pregunta: en Chrome, toca el candado junto a la dirección → Permisos → Micrófono → Permitir. Si la app está instalada: Ajustes de Android → Apps → Chrome → Permisos → Micrófono.', ca: 'Si no surt la pregunta: a Chrome, toca el cadenat al costat de l’adreça → Permisos → Micròfon → Permet. Si l’app està instal·lada: Configuració d’Android → Aplicacions → Chrome → Permisos → Micròfon.', en: 'If no prompt appears: in Chrome, tap the lock next to the address → Permissions → Microphone → Allow. If the app is installed: Android Settings → Apps → Chrome → Permissions → Microphone.' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
@@ -82,8 +84,20 @@
   }
 
   let unlocked = false;
-  // Must be called inside a tap handler.
-  function unlock() {
+  // Mic permission is asked with getUserMedia inside the tap: Android Chrome may refuse a first request that comes
+  // from a timer, and it did (v0.3.1 never listened on Guille's phone). The stream is closed at once, because
+  // speech recognition opens the mic itself and an open stream would block it.
+  let micReady = null;
+  function askMic() {
+    if (!navigator.mediaDevices?.getUserMedia) { micReady = Promise.resolve('unknown'); return micReady; }
+    micReady = navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((st) => { st.getTracks().forEach((tr) => tr.stop()); return 'granted'; })
+      .catch((e) => (e?.name === 'NotAllowedError' || e?.name === 'SecurityError' ? 'denied' : `error ${e?.name || ''}`.trim()));
+    return micReady;
+  }
+  // Must be called inside a tap handler. mic: also ask for the microphone.
+  function unlock({ mic = false } = {}) {
+    if (mic) askMic();
     try {
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       audio.resume?.();
@@ -167,17 +181,20 @@
         speakId++; // later events of this utterance are stale too
         setTalking(false);
         quietUntil = Date.now() + QUIET_MS;
-        if (!closed && !m.pausedAt) setTimeout(() => { if (!closed && !m.pausedAt && !synth.speaking) listener?.resume(); }, QUIET_MS);
+        if (!closed && !m.pausedAt) setTimeout(() => { if (!closed && !m.pausedAt && !talking) listener?.resume(); }, QUIET_MS);
       };
       u.onend = done; u.onerror = done;
       setTalking(true);
       // onend is unreliable on some phones: check after an estimate, and wait longer while it still speaks.
-      const check = () => { if (id !== speakId) return; if (synth.speaking) speakTimer = setTimeout(check, 400); else done(); };
-      speakTimer = setTimeout(check, text.split(/\s+/).length * 420 + 900);
+      // Some phones leave speaking = true forever: give up waiting at three times the estimate.
+      const est = text.split(/\s+/).length * 420 + 900, deadline = Date.now() + est * 3;
+      const check = () => { if (id !== speakId) return; if (synth.speaking && Date.now() < deadline) speakTimer = setTimeout(check, 400); else done(); };
+      speakTimer = setTimeout(check, est);
       synth.speak(u);
     }
-    const quiet = () => !!synth && !m.setup.muted && (synth.speaking || Date.now() < quietUntil);
-    function setTalking(on) { el.querySelector('.bolo-wrap')?.classList.toggle('talking', on); }
+    let talking = false;
+    const quiet = () => !!synth && !m.setup.muted && (talking || Date.now() < quietUntil);
+    function setTalking(on) { talking = on; el.querySelector('.bolo-wrap')?.classList.toggle('talking', on); }
     function bubble(text) {
       const b = el.querySelector('.m-bubble');
       if (!b) return;
@@ -326,14 +343,33 @@
       speak(line('resumed'));
       render();
     }
+    let starting = false, loggedListening = false;
+    function setMic(s) {
+      const was = micState;
+      micState = s;
+      // The heard log records mic trouble, and the first time it really listens.
+      if (s === 'listening' && !loggedListening) { loggedListening = true; heard({ text: 'mic on', cmd: null, out: 'ok' }); }
+      if ((s === 'denied' || s === 'unsupported') && s !== was) heard({ text: `mic ${s}`, cmd: null, out: 'error' });
+      const d = el.querySelector('.mic');
+      if (d) { d.dataset.state = s; d.title = micTitle(); }
+      if ((s === 'denied') !== (was === 'denied')) render(); // show or hide the "mic blocked" help
+    }
     function startListening() {
-      if (!m.setup.voiceInput || !window.Voice?.supported() || listener || m.state.finished) return;
-      listener = Voice.listen({
-        lang: getLang(), strict: !!m.setup.strict, names: m.setup.names || {},
-        onCommand: command,
-        isQuiet: quiet,
-        onHeard: (h) => heard({ text: h.text, cmd: h.cmd ? h.cmd.cmd + (h.cmd.team ? `:${h.cmd.team}` : '') : null, out: h.outcome }),
-        onState: (s) => { micState = s; const d = el.querySelector('.mic'); if (d) { d.dataset.state = s; d.title = micTitle(); } },
+      if (!m.setup.voiceInput || !window.Voice?.supported() || listener || starting || m.state.finished) return;
+      starting = true;
+      (micReady || Promise.resolve('unknown')).then((perm) => {
+        starting = false;
+        if (perm.startsWith('error')) heard({ text: `mic ${perm}`, cmd: null, out: 'error' });
+        if (perm === 'denied') { setMic('denied'); return; }
+        if (closed || listener || m.state.finished || m.pausedAt) return;
+        listener = Voice.listen({
+          lang: getLang(), strict: !!m.setup.strict, names: m.setup.names || {},
+          onCommand: command,
+          isQuiet: quiet,
+          onHeard: (h) => heard({ text: h.text, cmd: h.cmd ? h.cmd.cmd + (h.cmd.team ? `:${h.cmd.team}` : '') : null, out: h.outcome }),
+          onState: setMic,
+        });
+        if (synth?.speaking && !m.setup.muted) listener?.pause(); // Bolo is mid-sentence: wait for him
       });
     }
     const micTitle = () => (micState === 'denied' ? t(TEXT.micDenied) : micState === 'error' ? t(TEXT.micError) : t(TEXT.voice));
@@ -437,6 +473,7 @@
           ${teamHalf('blue')}
         </div>
         ${getLang() === 'ca' && synth && voices.length && !voiceFor('ca') ? `<p class="m-note">${esc(t(TEXT.noCaVoice))}</p>` : ''}
+        ${micState === 'denied' ? `<button class="m-micblocked" data-act="mic" type="button"><b>🎙 ${esc(t(TEXT.micBlocked))}</b><span>${esc(t(TEXT.micHow))}</span></button>` : ''}
         ${s.finished ? finishPanel() : ''}
         ${showHeard ? `<div class="m-heard">${heardHtml(m, t, esc)}</div>` : ''}
         ${editing && !s.finished ? editPanel() : ''}
@@ -472,7 +509,7 @@
         save(); render(); return;
       }
       const act = b.dataset.act;
-      if (act === 'unlock') { unlock(); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
+      if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
       else if (act === 'heard') { showHeard = true; render(); }
       else if (act === 'close-heard') { showHeard = false; render(); }
@@ -487,7 +524,7 @@
       else if (act === 'mute') { m.setup.muted = !m.setup.muted; if (m.setup.muted) synth?.cancel(); save(); render(); }
       else if (act === 'pause') pause();
       else if (act === 'resume') resume();
-      else if (act === 'mic') listener ? listener.retry() : startListening();
+      else if (act === 'mic') askMic().then(() => (listener ? listener.retry() : startListening())); // inside the tap: may show the prompt
       else if (act === 'bolo') { const w = el.querySelector('.bolo-wrap'); w.classList.remove('bounce'); void w.offsetWidth; w.classList.add('bounce'); speak(fullScore()); }
       else if (act === 'exit') { if (confirm(t(TEXT.exitAsk))) { close(); opts.onExit?.(); } }
       else if (act === 'save') { const done = m; close(); opts.onFinish?.(done); }

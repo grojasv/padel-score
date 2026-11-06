@@ -272,3 +272,6 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .f-text { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .m-finish .final sup { font-size: 0.6em; }
 @media (orientation: portrait) { .m-finish { flex-direction: column; } .f-bolo { width: min(40vw, 160px); } .m-finish h2 { font-size: clamp(26px, 9vw, 40px); } }
+
+.m-micblocked { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 4; border: 2px solid var(--red); border-radius: 12px; background: rgba(20, 6, 10, 0.92); color: #fff; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer; }
+.m-micblocked b { font-size: 15px; } .m-micblocked span { font-size: 12px; opacity: 0.85; }

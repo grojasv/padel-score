@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.3.1'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.3.2'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -125,7 +125,7 @@
           ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
       }).join('')}</ul>` : `<p class="empty">${esc(t(TEXT.noHistory))}</p>`}`;
     $('heroBolo').addEventListener('click', (e) => { const m = e.currentTarget; m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce'); });
-    $('continueBtn')?.addEventListener('click', () => { Match.unlock(); location.hash = '#/match'; });
+    $('continueBtn')?.addEventListener('click', () => { Match.unlock({ mic: !!cur.setup.voiceInput }); location.hash = '#/match'; });
     view.querySelectorAll('[data-heard]').forEach((b) => b.addEventListener('click', () => {
       const e = log[Number(b.dataset.heard)];
       const box = document.createElement('div');
@@ -192,7 +192,7 @@
       e.preventDefault();
       const f = new FormData(form);
       if (current() && !confirm(t(TEXT.replaceAsk))) return;
-      Match.unlock(); // inside the tap: audio, speech, wake lock
+      Match.unlock({ mic: voiceOk && !!f.get('listen') }); // inside the tap: audio, speech, wake lock, mic permission
       const serve = f.get('serve');
       const setup = {
         mode: f.get('mode'),

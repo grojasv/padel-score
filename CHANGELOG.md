@@ -2,6 +2,14 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.3.2] — 2026-11-06
+### Fixed
+- **Voice control did not listen on Android.** The microphone is now requested inside the "¡A jugar!" / "Continuar" tap, which is where Chrome on Android shows the permission prompt. Before, the first request came from a timer, Chrome could refuse it, and the app then stopped listening for the whole match.
+- **A blocked mic is now visible.** A red banner explains how to allow it in Chrome or in the Android settings. Tapping it asks again.
+- The app no longer waits forever on a phone that reports Bolo is "still talking". The mic comes back at the latest after three times the expected length.
+- Mic errors ("audio-capture", "network") retry with a growing pause.
+- "Lo que oyó Bolo" now records "mic on" and every mic problem.
+
 ## [0.3.1] — 2026-11-06
 ### Fixed
 Found by playing a full match point by point (7-6, 3-6, 10-8 in the super tie-break):
