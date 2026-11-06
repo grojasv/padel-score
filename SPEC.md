@@ -36,6 +36,11 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 - History: the last matches (date, teams, set scores, duration, winner or draw). Kept in `padel-score.log`, newest first, 100 max.
 
 ## Setup (saved as defaults in `padel-score.setup`)
+Split since v0.4.0:
+- **New match** (`#/setup`) holds only the player names, the first serve and "¡A jugar!", plus a one-line summary of the rules with a link to Ajustes.
+- **Ajustes** (`#/settings`, a button on the hub) holds the rest: mode, 40-40, third set, time and voice. Each change is saved at once.
+
+Everything below is remembered between matches.
 - **Mode:** Dobles (default) or Individual (tennis singles).
 - **Teams:** Rojo and Azul are fixed colours. Optional player names: 2 per team (1 in singles).
 - **40-40:** Punto de oro (default) · Ventaja · Star point (advantage twice, then golden point).

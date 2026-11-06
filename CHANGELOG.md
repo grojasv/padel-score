@@ -2,6 +2,15 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.4.0] — 2026-11-06
+### Changed
+- **The new-match screen has only the essentials:**
+  - player names
+  - who serves first ("1.º en Rojo" shows only when both names of a team are filled in)
+  - "¡A jugar!"
+  - one line with the rules in use, which links to Ajustes
+- **New ⚙️ Ajustes page** on the main screen, for the format, the 40-40 rule, the third set, court time and voice. Every change is saved at once and is the default for every new match. Names and the serve are remembered too.
+
 ## [0.3.2] — 2026-11-06
 ### Fixed
 - **Voice control did not listen on Android.** The microphone is now requested inside the "¡A jugar!" / "Continuar" tap, which is where Chrome on Android shows the permission prompt. Before, the first request came from a timer, Chrome could refuse it, and the app then stopped listening for the whole match.

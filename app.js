@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.3.2'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.4.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -34,7 +34,7 @@
     timeHelp: { es: 'Bolo avisa a los 5 y a 1 minuto. Al acabar el tiempo se juega el último juego.', ca: 'En Bolo avisa als 5 i a 1 minut. En acabar el temps es juga l’últim joc.', en: 'Bolo warns at 5 and 1 minute. When time is up, the current game is the last.' },
     serve: { es: 'Saque inicial', ca: 'Servei inicial', en: 'First serve' },
     draw: { es: 'Sortear', ca: 'Sorteja', en: 'Random' },
-    firstOf: { es: 'Saca primero en {t}', ca: 'Treu primer a {t}', en: 'Serves first for {t}' },
+    firstOf: { es: '1.º en {t}', ca: '1r a {t}', en: '1st for {t}' },
     voice: { es: 'Voz', ca: 'Veu', en: 'Voice' },
     talk: { es: 'Bolo canta el marcador', ca: 'En Bolo canta el marcador', en: 'Bolo calls the score' },
     listen: { es: 'Control por voz: di «rojo» o «azul»', ca: 'Control per veu: digues «vermell» o «blau»', en: 'Voice control: say “red” or “blue”' },
@@ -42,6 +42,11 @@
     voiceHelp: { es: 'También: «deshacer», «marcador», «pausa». Funciona en Chrome con conexión. El micro se pausa mientras Bolo habla.', ca: 'També: «desfés», «marcador», «pausa». Funciona a Chrome amb connexió. El micro es pausa mentre en Bolo parla.', en: 'Also: “undo”, “score”, “pause”. Works in Chrome with a connection. The mic pauses while Bolo talks.' },
     noVoice: { es: 'Este navegador no reconoce la voz. Usa Chrome para el control por voz.', ca: 'Aquest navegador no reconeix la veu. Fes servir Chrome per al control per veu.', en: 'This browser has no speech recognition. Use Chrome for voice control.' },
     start: { es: '¡A jugar!', ca: 'A jugar!', en: 'Play!' },
+    settings: { es: 'Ajustes', ca: 'Ajustos', en: 'Settings' },
+    settingsHelp: { es: 'Las reglas de tus partidos. Se guardan al momento y se usan en cada partido nuevo.', ca: 'Les regles dels teus partits. Es desen al moment i s’usen a cada partit nou.', en: 'The rules for your matches. Saved straight away and used for every new match.' },
+    saved: { es: 'Guardado', ca: 'Desat', en: 'Saved' },
+    change: { es: 'Cambiar', ca: 'Canvia', en: 'Change' },
+    stbShort: { es: 'Súper tie-break', ca: 'Súper tie-break', en: 'Super tie-break' },
     back: { es: '‹ Volver', ca: '‹ Torna', en: '‹ Back' },
     replaceAsk: { es: 'Hay un partido a medias. ¿Empezar uno nuevo y descartarlo?', ca: 'Hi ha un partit a mitges. Vols començar-ne un de nou i descartar-lo?', en: 'There is a match in progress. Start a new one and discard it?' },
     won: { es: 'gana', ca: 'guanya', en: 'wins' },
@@ -113,6 +118,7 @@
       <div class="actions">
         ${cur ? `<button class="btn go big" id="continueBtn" type="button">▶ ${esc(t(TEXT.continue))}<small>${esc(teamName(cur.setup, 'red'))} – ${esc(teamName(cur.setup, 'blue'))}</small></button>` : ''}
         <a class="btn ${cur ? 'ghost' : 'go big'}" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
+        <a class="btn ghost small" href="#/settings">⚙️ ${esc(t(TEXT.settings))}</a>
       </div>
       <h2 class="sec">${esc(t(TEXT.history))}</h2>
       ${log.length ? `<ul class="card history">${log.map((e, i) => {
@@ -143,23 +149,76 @@
   function seg(name, value, options) {
     return `<div class="seg" role="radiogroup">${options.map(([v, label]) => `<label><input type="radio" name="${name}" value="${v}"${String(v) === String(value) ? ' checked' : ''}><span>${label}</span></label>`).join('')}</div>`;
   }
+  // The match screen: only what changes from match to match (names, who serves). The rules live in Ajustes.
   function renderSetup() {
     const s = loadSetup();
     const voiceOk = !!window.Voice?.supported();
     const nameInputs = (team) => [0, 1].map((i) => `<input class="name n-${team}${i ? ' p2' : ''}" name="${team}${i}" maxlength="18" autocomplete="off"
       placeholder="${esc(t(TEXT.player))} ${i + 1}" value="${esc(s.names[team][i] || '')}">`).join('');
-    const firstOf = (team) => `<div class="first-of p2"><span>${esc(t(TEXT.firstOf).replace('{t}', t(TEXT[team])))}</span>
+    // "Who serves first in the team" only matters, and only shows, when both names of that team are filled in.
+    const firstOf = (team) => `<div class="first-of p2" data-first="${team}"${s.names[team][0] && s.names[team][1] ? '' : ' hidden'}><span>${esc(t(TEXT.firstOf).replace('{t}', t(TEXT[team])))}</span>
       ${seg(`fp-${team}`, s.firstPlayer[team], [[0, `<span class="fp-name" data-fp="${team}0">${esc(s.names[team][0] || `${t(TEXT.player)} 1`)}</span>`], [1, `<span class="fp-name" data-fp="${team}1">${esc(s.names[team][1] || `${t(TEXT.player)} 2`)}</span>`]])}</div>`;
     view.innerHTML = `
       <a class="back" href="#/">${esc(t(TEXT.back))}</a>
       <form class="card setup" id="setupForm" data-mode="${s.mode}">
-        <h2>${esc(t(TEXT.setup))}</h2>
-        <fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.mode, [['doubles', `👥 ${esc(t(TEXT.doubles))}`], ['singles', `👤 ${esc(t(TEXT.singles))}`]])}</fieldset>
         <fieldset><legend>${esc(t(TEXT.teams))} <small class="muted">· ${esc(t(TEXT.namesOpt))}</small></legend>
           <div class="teams">
             <div class="team c-red"><h3>${esc(t(TEXT.red))}</h3>${nameInputs('red')}</div>
             <div class="team c-blue"><h3>${esc(t(TEXT.blue))}</h3>${nameInputs('blue')}</div>
           </div></fieldset>
+        <fieldset><legend>${esc(t(TEXT.serve))}</legend>
+          ${seg('serve', s.firstServe, [['red', `🔴 ${esc(t(TEXT.red))}`], ['blue', `🔵 ${esc(t(TEXT.blue))}`], ['random', `🎲 ${esc(t(TEXT.draw))}`]])}
+          ${firstOf('red')}${firstOf('blue')}</fieldset>
+        <a class="rules" href="#/settings"><span>${esc(rulesSummary(s, voiceOk))}</span><b>⚙️ ${esc(t(TEXT.change))}</b></a>
+        <button class="btn go big" type="submit">🎾 ${esc(t(TEXT.start))}</button>
+      </form>`;
+    const form = $('setupForm');
+    form.addEventListener('input', (e) => {
+      const m = e.target.name?.match(/^(red|blue)([01])$/);
+      if (!m) return;
+      const span = form.querySelector(`[data-fp="${m[1]}${m[2]}"]`);
+      if (span) span.textContent = e.target.value || `${t(TEXT.player)} ${Number(m[2]) + 1}`;
+      form.querySelector(`[data-first="${m[1]}"]`).hidden = !(form.elements[`${m[1]}0`].value.trim() && form.elements[`${m[1]}1`].value.trim());
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = new FormData(form);
+      if (current() && !confirm(t(TEXT.replaceAsk))) return;
+      Match.unlock({ mic: voiceOk && !!s.voiceInput }); // inside the tap: audio, speech, wake lock, mic permission
+      const serve = f.get('serve');
+      const setup = {
+        ...s,
+        names: { red: [f.get('red0'), f.get('red1')].map((x) => String(x || '').trim()), blue: [f.get('blue0'), f.get('blue1')].map((x) => String(x || '').trim()) },
+        firstServe: serve, firstPlayer: { red: Number(f.get('fp-red')) || 0, blue: Number(f.get('fp-blue')) || 0 },
+      };
+      store.set(KEY.setup, JSON.stringify(setup)); // names and serve are remembered for next time too
+      const played = { ...setup, firstServe: serve === 'random' ? (Math.random() < 0.5 ? 'red' : 'blue') : serve };
+      if (!voiceOk) played.voiceInput = false;
+      if (played.mode === 'singles') played.names = { red: [played.names.red[0], ''], blue: [played.names.blue[0], ''] };
+      const m = { setup: played, state: Scoring.init(played), stack: [], startedAt: Date.now(), pausedMs: 0, pausedAt: null, warned: [] };
+      store.set(KEY.current, JSON.stringify(m));
+      location.hash = '#/match';
+    });
+  }
+
+  // One line under the match screen: the rules in use, with a link to Ajustes.
+  function rulesSummary(s, voiceOk) {
+    const deuce = { golden: TEXT.golden, advantage: TEXT.advantage, star: TEXT.star }[s.deuce];
+    return [t(s.mode === 'singles' ? TEXT.singles : TEXT.doubles), t(deuce), t(s.superTiebreak ? TEXT.stbShort : TEXT.fullSet),
+      s.timeLimit ? `⏳ ${s.timeLimit} ${t(TEXT.min)}` : t(TEXT.noLimit),
+      `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}`].join(' · ');
+  }
+
+  // Ajustes: the default rules and voice options. Every change is saved at once and used by the next match.
+  function renderSettings() {
+    const s = loadSetup();
+    const voiceOk = !!window.Voice?.supported();
+    view.innerHTML = `
+      <a class="back" href="#/">${esc(t(TEXT.back))}</a>
+      <form class="card setup" id="settingsForm">
+        <h2>⚙️ ${esc(t(TEXT.settings))}</h2>
+        <p class="help">${esc(t(TEXT.settingsHelp))}</p>
+        <fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.mode, [['doubles', `👥 ${esc(t(TEXT.doubles))}`], ['singles', `👤 ${esc(t(TEXT.singles))}`]])}</fieldset>
         <fieldset><legend>${esc(t(TEXT.deuce))}</legend>
           ${seg('deuce', s.deuce, [['golden', esc(t(TEXT.golden))], ['advantage', esc(t(TEXT.advantage))], ['star', esc(t(TEXT.star))]])}
           <p class="help">${esc(t(TEXT.starHelp))}</p></fieldset>
@@ -169,44 +228,23 @@
         <fieldset><legend>${esc(t(TEXT.time))}</legend>
           ${seg('time', s.timeLimit, TIMES.map((m) => [m, m ? `${m} ${esc(t(TEXT.min))}` : esc(t(TEXT.noLimit))]))}
           <p class="help">${esc(t(TEXT.timeHelp))}</p></fieldset>
-        <fieldset><legend>${esc(t(TEXT.serve))}</legend>
-          ${seg('serve', s.firstServe, [['red', `🔴 ${esc(t(TEXT.red))}`], ['blue', `🔵 ${esc(t(TEXT.blue))}`], ['random', `🎲 ${esc(t(TEXT.draw))}`]])}
-          ${firstOf('red')}${firstOf('blue')}</fieldset>
         <fieldset><legend>${esc(t(TEXT.voice))}</legend>
           <label class="check"><input type="checkbox" name="talk"${s.muted ? '' : ' checked'}> ${esc(t(TEXT.talk))}</label>
           ${voiceOk ? `<label class="check"><input type="checkbox" name="listen"${s.voiceInput ? ' checked' : ''}> ${esc(t(TEXT.listen))}</label>
           <label class="check sub"><input type="checkbox" name="strict"${s.strict ? ' checked' : ''}> ${esc(t(TEXT.strict))}</label>
           <p class="help">${esc(t(TEXT.voiceHelp))}</p>` : `<p class="help">${esc(t(TEXT.noVoice))}</p>`}
         </fieldset>
-        <button class="btn go big" type="submit">🎾 ${esc(t(TEXT.start))}</button>
+        <p class="saved" id="savedNote" aria-live="polite"></p>
+        <a class="btn go big" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
       </form>`;
-    const form = $('setupForm');
-    form.addEventListener('change', (e) => {
-      if (e.target.name === 'mode') form.dataset.mode = e.target.value;
-    });
-    form.addEventListener('input', (e) => {
-      const m = e.target.name?.match(/^(red|blue)([01])$/);
-      if (m) { const span = form.querySelector(`[data-fp="${m[1]}${m[2]}"]`); if (span) span.textContent = e.target.value || `${t(TEXT.player)} ${Number(m[2]) + 1}`; }
-    });
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
+    const form = $('settingsForm');
+    form.addEventListener('change', () => {
       const f = new FormData(form);
-      if (current() && !confirm(t(TEXT.replaceAsk))) return;
-      Match.unlock({ mic: voiceOk && !!f.get('listen') }); // inside the tap: audio, speech, wake lock, mic permission
-      const serve = f.get('serve');
-      const setup = {
-        mode: f.get('mode'),
-        names: { red: [f.get('red0'), f.get('red1')].map((x) => String(x || '').trim()), blue: [f.get('blue0'), f.get('blue1')].map((x) => String(x || '').trim()) },
-        deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1', timeLimit: Number(f.get('time')) || 0,
-        firstServe: serve, firstPlayer: { red: Number(f.get('fp-red')) || 0, blue: Number(f.get('fp-blue')) || 0 },
-        muted: !f.get('talk'), voiceInput: voiceOk ? !!f.get('listen') : s.voiceInput, strict: !!f.get('strict'),
-      };
-      store.set(KEY.setup, JSON.stringify(setup));
-      const played = { ...setup, firstServe: serve === 'random' ? (Math.random() < 0.5 ? 'red' : 'blue') : serve };
-      if (played.mode === 'singles') played.names = { red: [played.names.red[0], ''], blue: [played.names.blue[0], ''] };
-      const m = { setup: played, state: Scoring.init(played), stack: [], startedAt: Date.now(), pausedMs: 0, pausedAt: null, warned: [] };
-      store.set(KEY.current, JSON.stringify(m));
-      location.hash = '#/match';
+      const next = { ...loadSetup(), mode: f.get('mode'), deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1',
+        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict') };
+      if (voiceOk) next.voiceInput = !!f.get('listen');
+      store.set(KEY.setup, JSON.stringify(next));
+      $('savedNote').textContent = `✓ ${t(TEXT.saved)}`;
     });
   }
 
@@ -252,7 +290,7 @@
     if (reloadPending) { location.reload(); return; } // a new version arrived during the match
     closeMatch();
     logLeftover();
-    if (r === 'setup') renderSetup(); else renderHub();
+    if (r === 'setup') renderSetup(); else if (r === 'settings') renderSettings(); else renderHub();
     window.scrollTo(0, 0);
   }
 
