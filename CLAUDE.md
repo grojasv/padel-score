@@ -1,0 +1,23 @@
+# Padel Score: project rules
+
+Phone scoreboard for padel and tennis, run by Bolo (a padel ball mascot) with voice in and out. Plain HTML/CSS/JS, no build step, GitHub Pages under `/padel-score/` (relative paths only). The plan, decisions and data formats are in `SPEC.md`. The shell is borrowed from `grojasv/gym-coach`.
+
+## Files
+- `index.html`, `style.css`: the shell. Tokens on `:root`, light and dark.
+- `app.js`: hub, setup, history, languages, install, footer. **`VERSION` here must match `CHANGELOG.md`.**
+- `scoring.js`: pure scoring engine (UMD, no DOM). Every rule change gets a test in `scripts/test-scoring.mjs`.
+- `match.js`: the scoreboard, undo/edit, clock, voice out. `voice.js`: speech recognition and command matching.
+- `mascot.js`: Bolo as SVG (UMD, reused by `scripts/make-icons.mjs`). Original design: no third-party character names or references anywhere.
+- `data/lines.json`: Bolo's lines.
+
+## Rules
+- **ES is the source language.** CA and EN are translations. Every user-facing string has all 3.
+- Spoken lines are short (under about 12 words), with no emoji or symbols.
+- `node scripts/test-scoring.mjs`, `node scripts/test-voice.mjs` and `node scripts/validate.mjs` must pass before every commit.
+- Everything that needs a user gesture (speech, AudioContext, mic, wake lock) happens inside the Start tap.
+- The mic is paused while Bolo speaks (anti-echo). The recognition loop restarts itself.
+- The match in progress is saved after every point. A reload never loses it.
+- PWA: **bump `CACHE` in `sw.js` when `SHELL` changes.** Icons: `node scripts/make-icons.mjs` (needs uv).
+- Check the hub at 320×568 and 390×844 and the scoreboard at 568×320 and 844×390, in light and dark. Run with `python3 -m http.server 8767`.
+- `CHANGELOG.md` (Keep a Changelog + SemVer) is updated in the same commit.
+- Commits use the GitHub noreply email (repo-local git config), never a work address.

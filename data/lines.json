@@ -1,0 +1,62 @@
+{
+  "hello": {
+    "es": ["¡Hola! Soy Bolo. ¿Echamos un partido?", "¡Pista lista! ¿Quién se atreve?", "Yo llevo el marcador, vosotros a sudar.", "Hoy huele a remontada.", "Calentad bien, que hoy vuelo."],
+    "ca": ["Hola! Soc en Bolo. Fem un partit?", "Pista a punt! Qui s’hi atreveix?", "Jo porto el marcador, vosaltres a suar.", "Avui fa olor de remuntada.", "Escalfeu bé, que avui volo."],
+    "en": ["Hi! I’m Bolo. Fancy a match?", "Court’s ready! Who dares?", "I keep the score, you do the sweating.", "Smells like a comeback today.", "Warm up well, I’m flying today."]
+  },
+  "start": {
+    "es": ["¡Que empiece el partido!", "¡A jugar! Saca {team}.", "Juego limpio y a por todas."],
+    "ca": ["Que comenci el partit!", "A jugar! Treu {team}.", "Joc net i a totes."],
+    "en": ["Let the match begin!", "Play! {team} to serve.", "Play fair and go for it."]
+  },
+  "game": {
+    "es": ["¡Vaya juego!", "¡Eso es padel!", "Bien jugado.", "¡Qué bandeja!", "Seguimos, seguimos."],
+    "ca": ["Quin joc!", "Això és pàdel!", "Ben jugat.", "Quina safata!", "Seguim, seguim."],
+    "en": ["What a game!", "That’s padel!", "Well played.", "What a bandeja!", "On we go."]
+  },
+  "set": {
+    "es": ["¡Set para la historia!", "Respirad, bebed agua.", "¡Esto se pone serio!"],
+    "ca": ["Set per a la història!", "Respireu, beveu aigua.", "Això es posa seriós!"],
+    "en": ["A set for the history books!", "Breathe and drink some water.", "Now it’s getting serious!"]
+  },
+  "setPoint": {
+    "es": ["¡Se huele el set!", "Concentración máxima."],
+    "ca": ["Es nota olor de set!", "Concentració màxima."],
+    "en": ["I can smell the set!", "Full focus now."]
+  },
+  "matchPoint": {
+    "es": ["¡Todo o nada!", "¡Mi pelo brilla de emoción!"],
+    "ca": ["Tot o res!", "Els cabells em brillen d’emoció!"],
+    "en": ["All or nothing!", "My hair glows with excitement!"]
+  },
+  "finish": {
+    "es": ["¡Enhorabuena, campeones!", "Partidazo. Choca esas palas.", "¡Qué nivel! Hasta la próxima."],
+    "ca": ["Enhorabona, campions!", "Partidàs. Xoqueu aquestes pales.", "Quin nivell! Fins a la propera."],
+    "en": ["Congratulations, champions!", "Great match. Tap those rackets.", "What a level! See you next time."]
+  },
+  "draw": {
+    "es": ["Empate. Tocará la revancha."],
+    "ca": ["Empat. Caldrà la revenja."],
+    "en": ["A draw. Rematch, then."]
+  },
+  "timeWarn": {
+    "es": ["Quedan {n} minutos."],
+    "ca": ["Queden {n} minuts."],
+    "en": ["{n} minutes left."]
+  },
+  "lastGame": {
+    "es": ["Se acabó el tiempo. Último juego."],
+    "ca": ["S’ha acabat el temps. Últim joc."],
+    "en": ["Time’s up. Last game."]
+  },
+  "paused": {
+    "es": ["Partido en pausa."],
+    "ca": ["Partit en pausa."],
+    "en": ["Match paused."]
+  },
+  "resumed": {
+    "es": ["¡Seguimos!"],
+    "ca": ["Seguim!"],
+    "en": ["We’re back!"]
+  }
+}
