@@ -5,12 +5,12 @@
     "en": ["Hi! I’m Bolo. Fancy a match?", "Court’s ready! Who dares?", "I keep the score, you do the sweating.", "Smells like a comeback today.", "Warm up well, I’m flying today."]
   },
   "start": {
-    "es": ["¡Que empiece el partido!", "¡A jugar! Saca {team}.", "Juego limpio y a por todas."],
-    "ca": ["Que comenci el partit!", "A jugar! Treu {team}.", "Joc net i a totes."],
-    "en": ["Let the match begin!", "Play! {team} to serve.", "Play fair and go for it."]
+    "es": ["¡Que empiece el partido!", "¡A jugar!", "Juego limpio y a por todas."],
+    "ca": ["Que comenci el partit!", "A jugar!", "Joc net i a totes."],
+    "en": ["Let the match begin!", "Play!", "Play fair and go for it."]
   },
   "game": {
-    "es": ["¡Vaya juego!", "¡Eso es padel!", "Bien jugado.", "¡Qué bandeja!", "Seguimos, seguimos."],
+    "es": ["¡Vaya juego!", "¡Eso es pádel!", "Bien jugado.", "¡Qué bandeja!", "Seguimos, seguimos."],
     "ca": ["Quin joc!", "Això és pàdel!", "Ben jugat.", "Quina safata!", "Seguim, seguim."],
     "en": ["What a game!", "That’s padel!", "Well played.", "What a bandeja!", "On we go."]
   },

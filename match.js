@@ -32,6 +32,7 @@
     undoLast: { es: 'Deshacer el último punto', ca: 'Desfés l’últim punt', en: 'Undo the last point' },
     points: { es: 'Puntos', ca: 'Punts', en: 'Points' },
     server: { es: 'Saca', ca: 'Treu', en: 'Serving' },
+    serves: { es: 'Saca {t}', ca: 'Treu {t}', en: '{t} to serve' },
     stopNow: { es: 'Terminar el partido ahora', ca: 'Acaba el partit ara', en: 'End the match now' },
     stopAsk: { es: '¿Terminar ahora? Gana quien vaya por delante.', ca: 'Vols acabar ara? Guanya qui vagi per davant.', en: 'End now? Whoever is ahead wins.' },
     close: { es: 'Listo', ca: 'Fet', en: 'Done' },
@@ -100,6 +101,7 @@
     const names = (team) => (m.setup.names?.[team] || []).filter(Boolean);
     const teamLabel = (team) => (names(team).length ? names(team).join(' · ') : t(TEXT[team]));
     const serverLabel = () => { const sv = Scoring.server(m.state); return names(sv.team)[sv.player] || t(TEXT[sv.team]); };
+    const startLine = () => `${line('start')} ${t(TEXT.serves).replace('{t}', serverLabel())}.`;
 
     // ---------- lines ----------
     function line(key, vars = {}) {
@@ -112,10 +114,15 @@
     }
 
     // ---------- speaking (the mic is held while Bolo talks) ----------
+    // Each call gets an id: cancel() fires the old utterance's onend later, and that stale end must not reopen
+    // the mic while the new call is playing. Commands heard while Bolo talks (or just after) are dropped.
+    let speakId = 0, quietUntil = 0;
+    const QUIET_MS = 700;
     function speak(text) {
       if (!text) return;
       bubble(text);
       if (!synth || m.setup.muted) return;
+      const id = ++speakId;
       synth.cancel();
       clearTimeout(speakTimer);
       listener?.pause();
@@ -124,13 +131,22 @@
       const v = voiceFor(lang) || (lang === 'ca' ? voiceFor('es') : null);
       if (v) { u.voice = v; u.lang = v.lang; } else u.lang = VOICE_LANG[lang];
       u.rate = 1.05;
-      const done = () => { clearTimeout(speakTimer); setTalking(false); if (!closed && !m.pausedAt) listener?.resume(); };
+      const done = () => {
+        if (id !== speakId) return; // a newer call is playing
+        clearTimeout(speakTimer);
+        speakId++; // later events of this utterance are stale too
+        setTalking(false);
+        quietUntil = Date.now() + QUIET_MS;
+        if (!closed && !m.pausedAt) setTimeout(() => { if (!closed && !m.pausedAt && !synth.speaking) listener?.resume(); }, QUIET_MS);
+      };
       u.onend = done; u.onerror = done;
       setTalking(true);
-      // onend is unreliable on some phones: resume the mic after an estimate anyway.
-      speakTimer = setTimeout(done, text.split(/\s+/).length * 420 + 900);
+      // onend is unreliable on some phones: check after an estimate, and wait longer while it still speaks.
+      const check = () => { if (id !== speakId) return; if (synth.speaking) speakTimer = setTimeout(check, 400); else done(); };
+      speakTimer = setTimeout(check, text.split(/\s+/).length * 420 + 900);
       synth.speak(u);
     }
+    const quiet = () => !!synth && !m.setup.muted && (synth.speaking || Date.now() < quietUntil);
     function setTalking(on) { el.querySelector('.bolo-wrap')?.classList.toggle('talking', on); }
     function bubble(text) {
       const b = el.querySelector('.m-bubble');
@@ -139,7 +155,8 @@
     }
 
     // ---------- clock ----------
-    const elapsed = () => Math.max(0, (m.pausedAt || Date.now()) - m.startedAt - m.pausedMs);
+    const elapsed = () => Math.max(0, (m.finishedAt || m.pausedAt || Date.now()) - m.startedAt - m.pausedMs);
+    const markFinished = () => { if (m.state.finished && !m.finishedAt) m.finishedAt = m.pausedAt || Date.now(); if (!m.state.finished) m.finishedAt = null; };
     const limitMs = () => (m.setup.timeLimit || 0) * 60000;
     const fmt = (ms) => {
       const s = Math.max(0, Math.round(ms / 1000));
@@ -171,6 +188,7 @@
       if (m.stack.length > 600) m.stack.shift();
       const r = Scoring.point(m.state, team);
       m.state = r.state;
+      markFinished();
       save();
       confirmSound(team);
       react(team, r.events);
@@ -185,6 +203,7 @@
     function undo() {
       if (!m.stack.length) return;
       m.state = m.stack.pop();
+      markFinished();
       save();
       undoSound();
       setMood('sad', 900);
@@ -203,6 +222,7 @@
       return parts.join('. ');
     }
     function command(cmd) {
+      if (quiet()) return; // Bolo's own call ("Juego rojo") must never score
       if (cmd.cmd === 'point') addPoint(cmd.team);
       else if (cmd.cmd === 'undo') undo();
       else if (cmd.cmd === 'score') speak(fullScore());
@@ -385,13 +405,13 @@
         save(); render(); return;
       }
       const act = b.dataset.act;
-      if (act === 'unlock') { unlock(); render(); startListening(); if (!m.stack.length) speak(line('start', { team: serverLabel() })); else speak(fullScore()); }
+      if (act === 'unlock') { unlock(); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') undo();
       else if (act === 'edit') { editing = true; render(); }
       else if (act === 'close-edit') { editing = false; render(); }
       else if (act === 'stop') {
         if (!confirm(t(TEXT.stopAsk))) return;
-        m.stack.push(m.state); m.state = Scoring.stop(m.state); editing = false; save();
+        m.stack.push(m.state); m.state = Scoring.stop(m.state); markFinished(); editing = false; save();
         listener?.stop(); listener = null; render(); speak(Scoring.call(m.state, ['match'], getLang()));
       }
       else if (act === 'mute') { m.setup.muted = !m.setup.muted; if (m.setup.muted) synth?.cancel(); save(); render(); }
@@ -400,7 +420,7 @@
       else if (act === 'mic') listener ? listener.retry() : startListening();
       else if (act === 'bolo') { const w = el.querySelector('.bolo-wrap'); w.classList.remove('bounce'); void w.offsetWidth; w.classList.add('bounce'); speak(fullScore()); }
       else if (act === 'exit') { if (confirm(t(TEXT.exitAsk))) { close(); opts.onExit?.(); } }
-      else if (act === 'save') { const done = m; close(); opts.onFinish?.(done, elapsed()); }
+      else if (act === 'save') { const done = m; close(); opts.onFinish?.(done); }
     }
     // The undo button also listens to long-press on the centre: open the edit panel.
     let pressTimer = null;
@@ -432,7 +452,7 @@
     tick = setInterval(onTick, 500);
     if (unlocked) {
       startListening();
-      if (!m.stack.length) speak(line('start', { team: serverLabel() }));
+      if (!m.stack.length) speak(startLine());
     }
     return { close, rerender: () => { listener?.setLang(getLang()); render(); } };
   }

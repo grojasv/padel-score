@@ -5,15 +5,17 @@
 (function (root) {
   'use strict';
 
-  // Words per command, normalized (lowercase, no accents). All languages are accepted at once: a Catalan
-  // phone without ca-ES recognition falls back to es-ES and the players may mix languages anyway.
+  // Words per command, normalized (lowercase, no accents). ES and CA words are always accepted: a Catalan
+  // phone without ca-ES recognition falls back to es-ES and players mix both. EN colour words count only when
+  // the app is in English, because "red" is Spanish for the net ("¡a la red!").
   const WORDS = {
-    red: ['rojo', 'roja', 'rojos', 'vermell', 'vermella', 'bermell', 'red'],
-    blue: ['azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao', 'blue', 'blew'],
+    red: ['rojo', 'roja', 'rojos', 'vermell', 'vermella', 'bermell'],
+    blue: ['azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao'],
     undo: ['deshacer', 'deshaz', 'anula', 'anular', 'desfes', 'desfer', 'anulla', 'undo', 'cancel'],
     score: ['marcador', 'resultado', 'score'],
     pause: ['pausa', 'pause'],
   };
+  const EN_WORDS = { red: ['red'], blue: ['blue', 'blew'] };
   const PHRASES = { blue: ['a sul', 'a zul'] }; // two-token near misses for "azul"
   const POINT = ['punto', 'punt', 'point', 'puntos', 'punts'];
 
@@ -21,18 +23,21 @@
     .replace(/·/g, '').replace(/[^a-z0-9ñç\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
   /* Returns { cmd: 'point', team } | { cmd: 'undo' } | { cmd: 'score' } | { cmd: 'pause' } | null.
-   * strict: a point needs "punto" right before the colour (or name).
-   * names: { red: ['guille', 'ana'], blue: [...] } player names, matched by their first word. */
-  function match(transcript, { strict = false, names = {} } = {}) {
+   * strict: a point needs "punto" right before the colour or the name.
+   * names: { red: ['guille', 'ana'], blue: [...] } player names, matched by their first word, in strict mode only:
+   * players call each other by name all game ("¡tuya, Ana!"), so a bare name must never score.
+   * lang: the app language; 'en' adds the English colour words. */
+  function match(transcript, { strict = false, names = {}, lang = 'es' } = {}) {
     const text = norm(transcript);
     if (!text) return null;
     const tokens = text.split(' ');
     const has = (list) => tokens.some((t) => list.includes(t));
     if (has(WORDS.undo)) return { cmd: 'undo' };
 
+    const named = (team) => (strict ? (names[team] || []).map((n) => norm(n).split(' ')[0]).filter((n) => n.length > 2) : []);
     const teamWords = {
-      red: [...WORDS.red, ...(names.red || []).map((n) => norm(n).split(' ')[0]).filter((n) => n.length > 2)],
-      blue: [...WORDS.blue, ...(names.blue || []).map((n) => norm(n).split(' ')[0]).filter((n) => n.length > 2)],
+      red: [...WORDS.red, ...(lang === 'en' ? EN_WORDS.red : []), ...named('red')],
+      blue: [...WORDS.blue, ...(lang === 'en' ? EN_WORDS.blue : []), ...named('blue')],
     };
     const hits = new Set();
     tokens.forEach((t, i) => {
@@ -52,10 +57,12 @@
 
   // ---------- the recognition loop (browser only) ----------
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
-  const Rec = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
-  const supported = () => !!Rec;
+  // Looked up on use, not at load, so a test can swap in a fake recognizer.
+  const getRec = () => (typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null);
+  const supported = () => !!getRec();
 
   function listen(opts) {
+    const Rec = getRec();
     if (!Rec) { opts.onState?.('unsupported'); return null; }
     let rec = null, wanted = true, held = false, backoff = 0, timer = null, lang = opts.lang || 'es', fallback = false;
     let lastCmd = '', lastAt = 0;
@@ -78,19 +85,15 @@
       rec.lang = fallback ? 'es-ES' : VOICE_LANG[lang] || 'es-ES';
       rec.continuous = true;
       rec.interimResults = true;
-      rec.maxAlternatives = 3;
+      rec.maxAlternatives = 1; // extra alternatives turn "¡ojo!" into "rojo"
       handled.clear();
       rec.onstart = () => { backoff = 0; state('listening'); };
       rec.onresult = (e) => {
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const key = i;
           if (handled.has(key)) continue;
-          const res = e.results[i];
-          for (let a = 0; a < res.length; a++) {
-            const cmd = match(res[a].transcript, { strict: opts.strict, names: opts.names });
-            // Interim results act only on the top alternative; final ones may use the others.
-            if (cmd && (res.isFinal || a === 0)) { fire(cmd, key); break; }
-          }
+          const cmd = match(e.results[i][0].transcript, { strict: opts.strict, names: opts.names, lang });
+          if (cmd) fire(cmd, key);
         }
       };
       rec.onerror = (e) => {

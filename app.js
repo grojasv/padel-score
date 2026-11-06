@@ -204,15 +204,26 @@
     matchEl.hidden = false;
     match = Match.open(matchEl, {
       match: m, store, getLang: () => lang, lines,
-      onFinish: (done, ms) => {
-        const s = done.state;
-        store.set(KEY.log, JSON.stringify([{ at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000) }, ...readLog()].slice(0, 100)));
-        store.del(KEY.current);
-        match = null; location.hash = '#/';
-      },
+      onFinish: (done) => { logMatch(done); match = null; location.hash = '#/'; },
       onExit: () => { match = null; location.hash = '#/'; },
     });
   }
+  // Writes a finished match to the history (once per startedAt) and clears it as the current match.
+  function logMatch(done) {
+    const s = done.state;
+    const ms = Math.max(0, (done.finishedAt || Date.now()) - done.startedAt - (done.pausedMs || 0));
+    const log = readLog();
+    if (!log.some((e) => e.at === done.startedAt)) {
+      store.set(KEY.log, JSON.stringify([{ at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000) }, ...log].slice(0, 100)));
+    }
+    store.del(KEY.current);
+  }
+  // A match that ended while the app was closed on the finish screen still goes to the history.
+  function logLeftover() {
+    const c = readJSON(KEY.current, null);
+    if (c?.state?.finished && location.hash !== '#/match') logMatch(c);
+  }
+
   function closeMatch() {
     if (match) { match.close(); match = null; }
     matchEl.hidden = true; matchEl.innerHTML = '';
@@ -223,6 +234,7 @@
     const r = location.hash.replace(/^#\/?/, '');
     if (r === 'match') { if (!match) openMatch(); return; }
     closeMatch();
+    logLeftover();
     if (r === 'setup') renderSetup(); else renderHub();
     window.scrollTo(0, 0);
   }

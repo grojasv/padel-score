@@ -16,7 +16,11 @@ const cases = [
   ['Azúl', {}, { cmd: 'point', team: 'blue' }],
   ['punt vermell', {}, { cmd: 'point', team: 'red' }],
   ['blau', {}, { cmd: 'point', team: 'blue' }],
-  ['point blue', {}, { cmd: 'point', team: 'blue' }],
+  ['point blue', { lang: 'en' }, { cmd: 'point', team: 'blue' }],
+  ['point blue', {}, null],
+  ['a la red', {}, null],
+  ['dio en la red', {}, null],
+  ['red', { lang: 'en' }, { cmd: 'point', team: 'red' }],
   ['rojo azul', {}, null],
   ['deshacer', {}, { cmd: 'undo' }],
   ['desfés', {}, { cmd: 'undo' }],
@@ -28,9 +32,10 @@ const cases = [
   ['rojo', { strict: true }, null],
   ['punto rojo', { strict: true }, { cmd: 'point', team: 'red' }],
   ['punto para rojo', { strict: true }, null],
-  ['Guille', { names: { red: ['Guille Rojas'] } }, { cmd: 'point', team: 'red' }],
+  ['tuya Guille', { names: { red: ['Guille Rojas'] } }, null],
+  ['punto Guille', { names: { red: ['Guille Rojas'] }, strict: true }, { cmd: 'point', team: 'red' }],
   ['punto Ana', { names: { blue: ['Ana'] }, strict: true }, { cmd: 'point', team: 'blue' }],
-  ['Al', { names: { blue: ['Al'] } }, null], // names under 3 letters are ignored
+  ['punto Al', { names: { blue: ['Al'] }, strict: true }, null], // names under 3 letters are ignored
 ];
 
 let fails = 0;

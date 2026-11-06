@@ -91,10 +91,16 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
   - undo: `deshacer`, `anula` / `desfés`, `anul·la` / `undo`, `cancel`. Not "error" or "atrás": players say those during play.
   - repeat score: `marcador` / `marcador` / `score`
   - pause: `pausa` / `pausa` / `pause`
-  - Player names from setup are also accepted for their team.
+  - Player names score for their team **only in strict mode** ("punto Ana"). Players call each other by name all game.
+  - EN colour words (`red`, `blue`) count only when the app is in English, because "red" is Spanish for the net.
+  - Only the top recognition alternative is used, so "¡ojo!" is less likely to become "rojo".
   - Small near-miss lists ("roja", "azúl", "a sul"…) live in `voice.js`.
 - **Strict mode** (setting): only "punto + colour" counts. Use it if false points happen.
-- **Anti-echo:** recognition is aborted before every `speak()` and restarted when the speech ends. A timer fallback (estimated speech length + 500 ms) restarts it too, because `onend` is unreliable.
+- **Anti-echo:**
+  - Recognition is aborted before every `speak()` and restarted 700 ms after the speech ends.
+  - Each call has an id, so the late `onend` of a cancelled call cannot reopen the mic.
+  - A fallback timer restarts it, because `onend` is unreliable: the estimated length, re-armed while `speechSynthesis.speaking` is still true.
+  - Commands are dropped while Bolo speaks and for 700 ms after.
 - **Keep-alive:** Chrome ends recognition after silence or about a minute, so the loop restarts it on `onend`/`onerror`, with backoff on `not-allowed`/`network` errors. The mic dot shows the state: green listening, grey paused, red error with a tap to retry.
 - **De-dup:** one command per result. The same command within 1.5 s is ignored, and final results are preferred over interim ones.
 - **Confirm:** every accepted command plays a short two-tone sound right away, then the score is spoken. If it was wrong, say "deshacer".
