@@ -2,6 +2,18 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.3.0] — 2026-11-06
+### Added
+- **"Lo que oyó Bolo":** a log of every phrase the mic heard, with what it did:
+  - ✅ done
+  - 🔇 ignored because Bolo was talking
+  - ↺ repeat
+  - · no command
+  - ⚠️ error
+  - 👆 taps, since a tap often means the voice missed
+- Open it from the ✏️ panel during a match, from the finish screen or from the history. **Copiar para enviar** copies it as text, ready for WhatsApp.
+- The 10 newest matches keep their log.
+
 ## [0.2.1] — 2026-11-06
 ### Fixed
 - **A new version now shows without closing the app.** It checks for updates every time it comes back to the screen. When a new version arrives it reloads by itself, or after you leave the scoreboard if you are mid-match. The old cache is deleted.

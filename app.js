@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.2.1'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.3.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -115,16 +115,29 @@
         <a class="btn ${cur ? 'ghost' : 'go big'}" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
       </div>
       <h2 class="sec">${esc(t(TEXT.history))}</h2>
-      ${log.length ? `<ul class="card history">${log.map((e) => {
+      ${log.length ? `<ul class="card history">${log.map((e, i) => {
         const sets = e.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${x.tb ? `<sup>${Math.min(x.tb.red, x.tb.blue)}</sup>` : ''}`))
           .concat(e.endedBy !== 'score' && e.games && (e.games.red || e.games.blue) ? [`${e.games.red}-${e.games.blue}`] : []).join(' ');
         const w = e.winner === 'draw' ? `<span class="tag">${esc(t(TEXT.drawn))}</span>` : `<span class="tag c-${e.winner}">${esc(teamName(e.setup, e.winner))} ${esc(t(TEXT.won))}</span>`;
         return `<li><span class="h-date">${esc(dateFmt(e.at))} · ${e.minutes} min</span>
           <span class="h-teams"><b class="t-red">${esc(teamName(e.setup, 'red'))}</b> – <b class="t-blue">${esc(teamName(e.setup, 'blue'))}</b></span>
-          <span class="h-score">${sets || '–'}</span>${w}</li>`;
+          <span class="h-score">${sets || '–'}</span>${w}
+          ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
       }).join('')}</ul>` : `<p class="empty">${esc(t(TEXT.noHistory))}</p>`}`;
     $('heroBolo').addEventListener('click', (e) => { const m = e.currentTarget; m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce'); });
     $('continueBtn')?.addEventListener('click', () => { Match.unlock(); location.hash = '#/match'; });
+    view.querySelectorAll('[data-heard]').forEach((b) => b.addEventListener('click', () => {
+      const e = log[Number(b.dataset.heard)];
+      const box = document.createElement('div');
+      box.className = 'heard-modal';
+      box.innerHTML = Match.heardHtml({ ...e, startedAt: e.at }, t, esc);
+      box.addEventListener('click', (ev) => {
+        const act = ev.target.closest('[data-act]')?.dataset.act;
+        if (act === 'close-heard' || ev.target === box) box.remove();
+        if (act === 'copy-heard') Match.copyHeard(ev.target.closest('button'), { ...e, startedAt: e.at });
+      });
+      document.body.appendChild(box);
+    }));
   }
 
   function seg(name, value, options) {
@@ -214,7 +227,10 @@
     const ms = Math.max(0, (done.finishedAt || Date.now()) - done.startedAt - (done.pausedMs || 0));
     const log = readLog();
     if (!log.some((e) => e.at === done.startedAt)) {
-      store.set(KEY.log, JSON.stringify([{ at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000) }, ...log].slice(0, 100)));
+      const entry = { at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000), heard: done.heard || [] };
+      // The heard log is kept for the 10 newest matches only, to stay well inside the phone's storage.
+      const next = [entry, ...log].slice(0, 100).map((e, i) => (i < 10 ? e : { ...e, heard: undefined }));
+      store.set(KEY.log, JSON.stringify(next));
     }
     store.del(KEY.current);
   }

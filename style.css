@@ -252,3 +252,16 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   .rotate-hint { display: block; grid-area: hint; margin: 0; text-align: center; font-size: 12px; opacity: 0.7; }
 }
 .muted { color: var(--muted); font-weight: 500; }
+
+/* ---------- what Bolo heard ---------- */
+.m-heard, .heard-modal { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(8, 14, 32, 0.9); }
+.h-box { background: #13254a; color: #fff; border-radius: 16px; padding: 12px; width: min(100%, 620px); max-height: 100%; display: flex; flex-direction: column; gap: 6px; }
+.h-box h3 { margin: 0; font-size: 17px; }
+.h-key { margin: 0; font-size: 12px; opacity: 0.75; }
+.h-list { margin: 0; padding: 0; list-style: none; overflow: auto; font-size: 14px; font-variant-numeric: tabular-nums; flex: 1 1 auto; min-height: 60px; }
+.h-list li { padding: 3px 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.h-list li.o-ok { color: #9ff0b8; } .h-list li.o-quiet, .h-list li.o-dup { color: #ffd98a; } .h-list li.o-error { color: #ff8a93; }
+.h-list li.o-none { opacity: 0.7; } .h-list li.tap { color: #8ab8ff; }
+.h-box .btn { color: #fff; border-color: #fff; background: transparent; }
+.h-box .btn.go { background: var(--go); }
+.history .h-heard { grid-column: 1 / -1; justify-self: start; }

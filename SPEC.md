@@ -104,6 +104,9 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 - **Keep-alive:** Chrome ends recognition after silence or about a minute, so the loop restarts it on `onend`/`onerror`, with backoff on `not-allowed`/`network` errors. The mic dot shows the state: green listening, grey paused, red error with a tap to retry.
 - **De-dup:** one command per result. The same command within 1.5 s is ignored, and final results are preferred over interim ones.
 - **Confirm:** every accepted command plays a short two-tone sound right away, then the score is spoken. If it was wrong, say "deshacer".
+- **Heard log** (for tuning):
+  - Every final phrase, command, error and tap is stored with the match time and what it did. This is capped at 250 entries per match, and kept on the 10 newest history entries.
+  - Viewed from the ✏️ panel, the finish screen and the history, with a copy-as-text button.
 - **Limits** (shown in the setup help):
   - Chrome on Android needs network for recognition.
   - Firefox has no recognition, so the voice toggle is hidden.

@@ -69,13 +69,16 @@
     const handled = new Set(); // result indexes already acted on (interim results come several times)
 
     const state = (s) => opts.onState?.(s);
-    function fire(cmd, key) {
+    // onHeard gets every final phrase and every command, with what happened to it, for the "what Bolo heard" log.
+    function fire(cmd, key, text) {
       const sig = cmd.cmd + (cmd.team || '');
       const now = Date.now();
-      if (sig === lastCmd && now - lastAt < 1500) return; // the same command twice in 1.5 s: once
-      lastCmd = sig; lastAt = now;
       handled.add(key);
-      opts.onCommand?.(cmd);
+      if (opts.isQuiet?.()) { opts.onHeard?.({ text, cmd, outcome: 'quiet' }); return; } // Bolo is talking: his own words
+      if (sig === lastCmd && now - lastAt < 1500) { opts.onHeard?.({ text, cmd, outcome: 'dup' }); return; } // the same command twice in 1.5 s: once
+      lastCmd = sig; lastAt = now;
+      const outcome = opts.onCommand?.(cmd) || 'ok';
+      opts.onHeard?.({ text, cmd, outcome });
     }
 
     function start() {
@@ -92,11 +95,14 @@
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const key = i;
           if (handled.has(key)) continue;
-          const cmd = match(e.results[i][0].transcript, { strict: opts.strict, names: opts.names, lang });
-          if (cmd) fire(cmd, key);
+          const text = e.results[i][0].transcript;
+          const cmd = match(text, { strict: opts.strict, names: opts.names, lang });
+          if (cmd) fire(cmd, key, text);
+          else if (e.results[i].isFinal) { handled.add(key); opts.onHeard?.({ text, cmd: null, outcome: 'none' }); }
         }
       };
       rec.onerror = (e) => {
+        if (e.error !== 'no-speech' && e.error !== 'aborted') opts.onHeard?.({ text: e.error, cmd: null, outcome: 'error' });
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; state('denied'); return; }
         if (e.error === 'language-not-supported' && !fallback) { fallback = true; return; }
         if (e.error === 'network') { backoff = Math.min(30000, (backoff || 1000) * 2); state('error'); }

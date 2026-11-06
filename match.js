@@ -40,6 +40,11 @@
     micDenied: { es: 'Sin permiso de micrófono', ca: 'Sense permís de micròfon', en: 'No microphone permission' },
     micError: { es: 'Micro sin conexión. Toca para reintentar', ca: 'Micro sense connexió. Toca per reintentar', en: 'Mic offline. Tap to retry' },
     sets: { es: 'Sets', ca: 'Sets', en: 'Sets' },
+    heard: { es: 'Lo que oyó Bolo', ca: 'El que va sentir en Bolo', en: 'What Bolo heard' },
+    heardKey: { es: '✅ hecho · 🔇 ignorado, Bolo hablaba · ↺ repetido · · sin orden · ⚠️ error · 👆 toque', ca: '✅ fet · 🔇 ignorat, en Bolo parlava · ↺ repetit · · sense ordre · ⚠️ error · 👆 toc', en: '✅ done · 🔇 ignored, Bolo was talking · ↺ repeat · · no command · ⚠️ error · 👆 tap' },
+    heardEmpty: { es: 'Todavía no ha oído nada.', ca: 'Encara no ha sentit res.', en: 'Nothing heard yet.' },
+    copy: { es: 'Copiar para enviar', ca: 'Copia per enviar', en: 'Copy to send' },
+    copied: { es: 'Copiado', ca: 'Copiat', en: 'Copied' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
@@ -86,6 +91,31 @@
     if (synth) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); }
     keepAwake();
     unlocked = true;
+  }
+
+  // ---------- heard log viewer (shared by the match screen and the history) ----------
+  const OUT = { ok: '✅', quiet: '🔇', dup: '↺', none: '·', error: '⚠️', finished: '⏹' };
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  function heardLine(h, t) {
+    if (h.tap) return `${mmss(h.s)} 👆 ${h.tap === 'undo' ? t(TEXT.undo) : t(TEXT[h.tap])}`;
+    const what = h.cmd ? ` → ${h.cmd.replace('point:', '').replace('red', t(TEXT.red)).replace('blue', t(TEXT.blue))}` : '';
+    return `${mmss(h.s)} ${OUT[h.out] || '·'} «${h.text}»${what}`;
+  }
+  function heardText(m, t) {
+    const names = (team) => (m.setup.names?.[team] || []).filter(Boolean).join(' · ') || t(TEXT[team]);
+    return [`Padel Score · ${new Date(m.startedAt || m.at).toLocaleString()} · ${names('red')} – ${names('blue')}`,
+      t(TEXT.heardKey), ...(m.heard || []).map((h) => heardLine(h, t))].join('\n');
+  }
+  function heardHtml(m, t, esc) {
+    const list = m.heard || [];
+    return `<div class="h-box"><h3>🎙 ${esc(t(TEXT.heard))}</h3><p class="h-key">${esc(t(TEXT.heardKey))}</p>
+      ${list.length ? `<ol class="h-list">${list.map((h) => `<li class="${h.tap ? 'tap' : `o-${h.out}`}">${esc(heardLine(h, t))}</li>`).join('')}</ol>` : `<p>${esc(t(TEXT.heardEmpty))}</p>`}
+      <div class="row"><button class="btn small" data-act="copy-heard" type="button">📋 ${esc(t(TEXT.copy))}</button>
+      <button class="btn small go" data-act="close-heard" type="button">${esc(t(TEXT.close))}</button></div></div>`;
+  }
+  async function copyHeard(btn, m) {
+    const t = (o) => (o && (o[document.documentElement.lang] ?? o.es)) || '';
+    try { await navigator.clipboard.writeText(heardText(m, t)); btn.textContent = `✓ ${t(TEXT.copied)}`; } catch { btn.textContent = '✗'; }
   }
 
   function open(el, opts) {
@@ -221,12 +251,23 @@
       if (s.points.red || s.points.blue || s.tiebreak) parts.push(call);
       return parts.join('. ');
     }
+    // Returns what happened, for the heard log.
     function command(cmd) {
-      if (quiet()) return; // Bolo's own call ("Juego rojo") must never score
+      if (quiet()) return 'quiet'; // Bolo's own call ("Juego rojo") must never score
+      if (m.state.finished && cmd.cmd !== 'undo') return 'finished';
       if (cmd.cmd === 'point') addPoint(cmd.team);
-      else if (cmd.cmd === 'undo') undo();
+      else if (cmd.cmd === 'undo') { if (!m.stack.length) return 'none'; undo(); }
       else if (cmd.cmd === 'score') speak(fullScore());
       else if (cmd.cmd === 'pause' && !m.pausedAt) pause();
+      return 'ok';
+    }
+    // ---------- the "what Bolo heard" log: phrases, what they did, and taps (a tap often means voice missed) ----------
+    const HEARD_MAX = 250;
+    function heard(entry) {
+      m.heard = m.heard || [];
+      m.heard.push({ s: Math.round(elapsed() / 1000), ...entry });
+      if (m.heard.length > HEARD_MAX) m.heard.shift();
+      save();
     }
 
     // ---------- Bolo ----------
@@ -279,6 +320,8 @@
       listener = Voice.listen({
         lang: getLang(), strict: !!m.setup.strict, names: m.setup.names || {},
         onCommand: command,
+        isQuiet: quiet,
+        onHeard: (h) => heard({ text: h.text, cmd: h.cmd ? h.cmd.cmd + (h.cmd.team ? `:${h.cmd.team}` : '') : null, out: h.outcome }),
         onState: (s) => { micState = s; const d = el.querySelector('.mic'); if (d) { d.dataset.state = s; d.title = micTitle(); } },
       });
     }
@@ -320,6 +363,7 @@
         <h2>${esc(title)}</h2>
         ${s.endedBy === 'time' ? `<p>${esc(t(TEXT.byTime))}</p>` : ''}
         <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
+        ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="undo" type="button">↶ ${esc(t(TEXT.undoLast))}</button>
         <button class="btn go" data-act="save" type="button">${esc(t(TEXT.save))}</button></div>
       </div>`;
@@ -339,12 +383,14 @@
       return `<div class="m-edit" role="dialog"><div class="e-box">
         <div class="e-teams">${rows}</div>
         <p class="e-label">${esc(t(TEXT.server))}</p><div class="e-servers">${servers}</div>
+        ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="stop" type="button">${esc(t(TEXT.stopNow))}</button>
         <button class="btn go" data-act="close-edit" type="button">${esc(t(TEXT.close))}</button></div>
       </div></div>`;
     }
 
-    let editing = false;
+    let editing = false, showHeard = false;
+    const heardButton = () => (m.setup.voiceInput ? `<button class="btn small ghost" data-act="heard" type="button">🎙 ${esc(t(TEXT.heard))} (${(m.heard || []).filter((h) => !h.tap).length})</button>` : '');
     function render() {
       if (closed) return;
       const s = m.state;
@@ -374,6 +420,7 @@
         </div>
         ${getLang() === 'ca' && synth && voices.length && !voiceFor('ca') ? `<p class="m-note">${esc(t(TEXT.noCaVoice))}</p>` : ''}
         ${s.finished ? finishPanel() : ''}
+        ${showHeard ? `<div class="m-heard">${heardHtml(m, t, esc)}</div>` : ''}
         ${editing && !s.finished ? editPanel() : ''}
         ${m.pausedAt && !s.finished ? `<button class="m-overlay" data-act="resume" type="button"><b>⏸ ${esc(t(TEXT.paused))}</b><span>${esc(t(TEXT.tapResume))}</span></button>` : ''}
         ${!unlocked ? `<button class="m-overlay" data-act="unlock" type="button"><b>🎾</b><span>${esc(t(m.stack.length ? TEXT.tapContinue : TEXT.tapStart))}</span></button>` : ''}`;
@@ -390,6 +437,7 @@
       if (now - lastTap < TAP_GUARD) return;
       lastTap = now;
       addPoint(half.dataset.team);
+      if (m.setup.voiceInput) heard({ tap: half.dataset.team });
     }
     el.addEventListener('click', onClick);
     function onClick(e) {
@@ -407,7 +455,10 @@
       }
       const act = b.dataset.act;
       if (act === 'unlock') { unlock(); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
-      else if (act === 'undo') undo();
+      else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
+      else if (act === 'heard') { showHeard = true; render(); }
+      else if (act === 'close-heard') { showHeard = false; render(); }
+      else if (act === 'copy-heard') copyHeard(b, m);
       else if (act === 'edit') { editing = true; render(); }
       else if (act === 'close-edit') { editing = false; render(); }
       else if (act === 'stop') {
@@ -458,5 +509,5 @@
     return { close, rerender: () => { listener?.setLang(getLang()); render(); } };
   }
 
-  window.Match = { open, unlock, TEXT };
+  window.Match = { open, unlock, TEXT, heardHtml, copyHeard };
 })();
