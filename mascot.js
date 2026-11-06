@@ -82,19 +82,23 @@
     return `<g class="bolo-mouth">${shape}</g>`;
   }
 
+  // Each drawing gets its own gradient id: a hidden copy (the hub under the scoreboard) with the same id would
+  // otherwise be the one url(#…) resolves to, and Chrome paints the ball black.
+  let uid = 0;
   function svg(mood = 'idle', opts = {}) {
     if (!MOODS.includes(mood)) mood = 'idle';
     const gold = !!opts.gold;
+    const gid = `boloBall${++uid}`;
     return `<svg class="bolo mood-${mood}" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bolo">
   <defs>
-    <radialGradient id="boloBall" cx="38%" cy="32%" r="75%">
+    <radialGradient id="${gid}" cx="38%" cy="32%" r="75%">
       <stop offset="0" stop-color="${C.ballHi}"/><stop offset="0.55" stop-color="${C.ball}"/><stop offset="1" stop-color="${C.ballLo}"/>
     </radialGradient>
   </defs>
   <ellipse class="bolo-shadow" cx="100" cy="212" rx="46" ry="7" fill="#000" opacity="0.18"/>
   <g class="bolo-body">
     ${hair(gold)}
-    <circle cx="100" cy="140" r="66" fill="url(#boloBall)" stroke="${C.ink}" stroke-width="3"/>
+    <circle cx="100" cy="140" r="66" fill="url(#${gid})" stroke="${C.ink}" stroke-width="3"/>
     <circle cx="100" cy="140" r="62" fill="none" stroke="${C.ballHi}" stroke-width="3" stroke-dasharray="1.5 4" opacity="0.8"/>
     <path d="M48 100 Q76 140 48 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>
     <path d="M152 100 Q124 140 152 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>

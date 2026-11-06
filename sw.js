@@ -1,7 +1,7 @@
 // Padel Score service worker (from gym-coach): makes the site installable and usable offline.
 // Network-first for everything; the cache is only the offline fallback. Bump CACHE when SHELL changes.
 // GitHub Pages sends max-age=600, so fetches use cache: 'no-cache' and a new release shows on the next open.
-const CACHE = 'padel-score-v1';
+const CACHE = 'padel-score-v2';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'match.js', 'scoring.js', 'voice.js', 'mascot.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png', 'data/lines.json'];
 

@@ -2,6 +2,13 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.2.0] — 2026-11-06
+### Added
+- **Bolo goes gold on every golden point** (and on the star point's third deuce), with his fierce face, because the next point decides the game. His hair turns back to black after the point.
+
+### Fixed
+- Bolo's ball no longer turns black on the scoreboard when you open a match from the main screen (two drawings shared one colour id).
+
 ## [0.1.0] — 2026-11-06
 ### Added
 - **Bolo**, the mascot: a padel ball with big eyes that follow your taps and spiky black hair. The hair turns gold on set point, match point and the win.

@@ -113,7 +113,7 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 
 ## Bolo (mascot)
 - Original design: a fuzzy yellow-green padel ball with the white seam curve and big expressive eyes. The eyes bounce and follow taps. He has black spiky anime-hero hair.
-- The hair **turns gold** on set point, match point and the win, with a short glow.
+- The hair **turns gold** on set point, match point, every golden point (sudden death at 40-40) and the win, with a short glow.
 - **Moods:**
   - `idle` (gentle bounce)
   - `happy`, which squashes and stretches on each point

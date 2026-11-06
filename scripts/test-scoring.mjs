@@ -35,6 +35,8 @@ test('points go 15 30 40 and win the game', () => {
 test('golden point: at 40-40 the next point wins', () => {
   let r = play(base(), 'rrrbbb');
   assert.ok(r.events.includes('deuce') && r.events.includes('golden'));
+  assert.ok(S.isGolden(r.state));
+  assert.ok(!S.isGolden(play(base({ deuce: 'advantage' }), 'rrrbbb').state), 'advantage has no golden point');
   r = play(r.state, 'b');
   assert.deepEqual(r.state.games, { red: 0, blue: 1 });
 });
@@ -56,8 +58,10 @@ test('star point: advantage twice, golden on the third deuce', () => {
   assert.ok(!r.events.includes('golden'));
   r = play(r.state, 'rb'); // deuce 2
   assert.ok(!r.events.includes('golden'));
+  assert.ok(!S.isGolden(r.state), 'deuce 2 is not golden');
   r = play(r.state, 'br'); // deuce 3
   assert.ok(r.events.includes('golden'));
+  assert.ok(S.isGolden(r.state));
   r = play(r.state, 'r');
   assert.deepEqual(r.state.games, { red: 1, blue: 0 });
 });

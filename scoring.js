@@ -292,7 +292,7 @@
     return out.join('. ');
   }
 
-  const api = { init, point, timeUp, stop, adjust, server, display, call, stakes, totalGames, other, TEAMS, NUM };
+  const api = { isGolden: goldenNow, init, point, timeUp, stop, adjust, server, display, call, stakes, totalGames, other, TEAMS, NUM };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Scoring = api;
 })(typeof self !== 'undefined' ? self : this);

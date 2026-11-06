@@ -8,7 +8,7 @@
 <circle cx="256" cy="256" r="200" fill="none" stroke="#e63946" stroke-width="8" opacity="0.9"/>
 <svg x="76" y="84" width="360" height="360" class="bolo mood-happy" viewBox="6 4 188 206" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bolo">
   <defs>
-    <radialGradient id="boloBall" cx="38%" cy="32%" r="75%">
+    <radialGradient id="boloBall1" cx="38%" cy="32%" r="75%">
       <stop offset="0" stop-color="#f4ff9c"/><stop offset="0.55" stop-color="#dcef3a"/><stop offset="1" stop-color="#a9c21a"/>
     </radialGradient>
   </defs>
@@ -19,7 +19,7 @@
       <polygon points="44,112 18,92 46,88 22,58 58,70 52,30 82,58 96,8 110,54 140,22 134,64 176,44 152,84 184,92 156,112 140,92 120,86 100,84 80,86 60,94" fill="#1d1a12" stroke="#1d1a12" stroke-width="3" stroke-linejoin="round"/>
       <polyline points="58,70 70,84 82,58 92,78 110,54 118,74 134,64" fill="none" stroke="#3b3628" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <circle cx="100" cy="140" r="66" fill="url(#boloBall)" stroke="#1d1a12" stroke-width="3"/>
+    <circle cx="100" cy="140" r="66" fill="url(#boloBall1)" stroke="#1d1a12" stroke-width="3"/>
     <circle cx="100" cy="140" r="62" fill="none" stroke="#f4ff9c" stroke-width="3" stroke-dasharray="1.5 4" opacity="0.8"/>
     <path d="M48 100 Q76 140 48 182" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
     <path d="M152 100 Q124 140 152 182" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>

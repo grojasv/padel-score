@@ -240,7 +240,8 @@
       const w = el.querySelector('.bolo-wrap');
       if (!w) return;
       const st = Scoring.stakes(m.state);
-      const gold = m.state.finished ? m.state.winner !== 'draw' : !!(st.red || st.blue);
+      // Gold hair: set point, match point, every golden point (sudden death), and the win.
+      const gold = m.state.finished ? m.state.winner !== 'draw' : !!(st.red || st.blue) || Scoring.isGolden(m.state);
       const shown = m.state.finished ? 'cheer' : mood === 'idle' && gold ? 'fierce' : mood;
       w.innerHTML = Bolo.svg(shown, { gold });
       if (lookTeam) w.style.setProperty('--look-x', lookTeam === 'red' ? '-4px' : '4px');
@@ -309,7 +310,7 @@
       if (flash) return flash;
       if (s.lastGame) return t(TEXT.lastGame);
       if (s.tiebreak) return t(s.tiebreak === 'stb' ? TEXT.stb : TEXT.tb);
-      if (!s.tiebreak && s.points.red === 3 && s.points.blue === 3 && s.deuces >= ({ golden: 1, star: 3 }[s.config.deuce] || Infinity)) return t(TEXT.golden);
+      if (Scoring.isGolden(s)) return t(TEXT.golden);
       return '';
     }
     function finishPanel() {
