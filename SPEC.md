@@ -39,6 +39,8 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 Split since v0.4.0:
 - **New match** (`#/setup`) holds only the player names, the first serve and "¡A jugar!", plus a one-line summary of the rules with a link to Ajustes.
 - **Ajustes** (`#/settings`, a button on the hub) holds the rest: mode, 40-40, third set, time and voice. Each change is saved at once.
+- **Mic button in a match**: the 🎙 next to the clock turns voice control on and off for that match (`m.micOff`). Turning it on asks for the mic inside the tap and always starts a fresh recognizer.
+- **Listen loop**: one recognizer at a time; pause/stop drop it at once and ignore its late events; a recognizer with no `onstart` in 5 s is replaced. The listener is created held while Bolo speaks, so it is never started and aborted at once.
 - **Probar micrófono** (in Ajustes → Voz): permission state before and after a getUserMedia request made inside the tap, then 6 s of real recognition. Each failure shows its fix, and the result can be copied to send.
 
 Everything below is remembered between matches.

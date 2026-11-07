@@ -61,14 +61,20 @@
   const getRec = () => (typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null);
   const supported = () => !!getRec();
 
+  // The loop keeps one recognizer at a time. A recognizer that is aborted before it starts may never send onend
+  // (seen on Android, where Bolo's first line paused the mic at once and it never came back), so abort() drops it
+  // at once, every handler checks it still belongs to the current recognizer, and a watchdog replaces a recognizer
+  // that does not start within 5 s. opts.onTrace gets each step, for the "what Bolo heard" log.
   function listen(opts) {
     const Rec = getRec();
     if (!Rec) { opts.onState?.('unsupported'); return null; }
-    let rec = null, wanted = true, held = false, backoff = 0, timer = null, lang = opts.lang || 'es', fallback = false;
+    let rec = null, wanted = true, held = !!opts.held, backoff = 0, timer = null, guard = null, lang = opts.lang || 'es', fallback = false;
     let lastCmd = '', lastAt = 0;
     const handled = new Set(); // result indexes already acted on (interim results come several times)
+    const START_MS = opts.startMs || 5000; // tests use a shorter wait
 
     const state = (s) => opts.onState?.(s);
+    const trace = (s) => opts.onTrace?.(s);
     // onHeard gets every final phrase and every command, with what happened to it, for the "what Bolo heard" log.
     function fire(cmd, key, text) {
       const sig = cmd.cmd + (cmd.team || '');
@@ -80,18 +86,25 @@
       const outcome = opts.onCommand?.(cmd) || 'ok';
       opts.onHeard?.({ text, cmd, outcome });
     }
+    const later = (ms) => { clearTimeout(timer); timer = setTimeout(start, ms); };
 
     function start() {
       clearTimeout(timer);
       if (!wanted || held || rec) return;
-      rec = new Rec();
-      rec.lang = fallback ? 'es-ES' : VOICE_LANG[lang] || 'es-ES';
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1; // extra alternatives turn "¡ojo!" into "rojo"
+      const r = new Rec();
+      rec = r;
+      r.lang = fallback ? 'es-ES' : VOICE_LANG[lang] || 'es-ES';
+      r.continuous = true;
+      r.interimResults = true;
+      r.maxAlternatives = 1; // extra alternatives turn "¡ojo!" into "rojo"
       handled.clear();
-      rec.onstart = () => { backoff = 0; state('listening'); };
-      rec.onresult = (e) => {
+      let live = false;
+      r.onstart = () => {
+        if (rec !== r) return;
+        live = true; clearTimeout(guard); backoff = 0; state('listening');
+      };
+      r.onresult = (e) => {
+        if (rec !== r) return;
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const key = i;
           if (handled.has(key)) continue;
@@ -101,30 +114,46 @@
           else if (e.results[i].isFinal) { handled.add(key); opts.onHeard?.({ text, cmd: null, outcome: 'none' }); }
         }
       };
-      rec.onerror = (e) => {
+      r.onerror = (e) => {
+        if (rec !== r) return;
         if (e.error !== 'no-speech' && e.error !== 'aborted') opts.onHeard?.({ text: e.error, cmd: null, outcome: 'error' });
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; state('denied'); return; }
         if (e.error === 'language-not-supported' && !fallback) { fallback = true; return; }
         if (e.error === 'network' || e.error === 'audio-capture') { backoff = Math.min(30000, (backoff || 1000) * 2); state('error'); }
       };
-      rec.onend = () => {
-        rec = null;
+      r.onend = () => {
+        if (rec !== r) return; // an old recognizer, already replaced
+        rec = null; clearTimeout(guard);
         if (!wanted) { state('off'); return; }
         if (held) { state('paused'); return; }
-        timer = setTimeout(start, backoff || 250);
+        later(backoff || 250);
       };
-      try { rec.start(); } catch { rec = null; timer = setTimeout(start, 1000); }
+      clearTimeout(guard);
+      guard = setTimeout(() => {
+        if (rec !== r || live) return;
+        trace('mic stuck: restart');
+        drop();
+        if (wanted && !held) later(250);
+      }, START_MS);
+      try { r.start(); } catch (x) { trace(`mic start failed ${x?.name || ''}`.trim()); if (rec === r) rec = null; later(1000); }
     }
-    function abort() { clearTimeout(timer); if (rec) { try { rec.abort(); } catch { /* already stopped */ } } }
+    // Forget the current recognizer at once (its late events are ignored) and ask it to stop.
+    function drop() {
+      clearTimeout(timer); clearTimeout(guard);
+      const r = rec;
+      rec = null;
+      if (r) { try { r.abort(); } catch { /* already stopped */ } }
+    }
 
-    start();
+    if (held) state('paused'); else start();
     return {
       // Hold while Bolo speaks, so his own words are not heard as commands.
-      pause() { held = true; abort(); state('paused'); },
+      pause() { held = true; drop(); state('paused'); },
       resume() { held = false; if (wanted) start(); },
-      stop() { wanted = false; held = false; abort(); state('off'); },
-      retry() { wanted = true; backoff = 0; start(); },
-      setLang(l) { lang = l; fallback = false; abort(); },
+      stop() { wanted = false; held = false; drop(); state('off'); },
+      // A tap on the mic: always a fresh recognizer, whatever state the old one is in.
+      retry() { wanted = true; held = false; backoff = 0; drop(); start(); },
+      setLang(l) { lang = l; fallback = false; drop(); if (wanted && !held) later(250); },
       set strict(v) { opts.strict = v; },
     };
   }

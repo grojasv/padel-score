@@ -186,6 +186,8 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .mic::after { content: ''; position: absolute; right: 0; bottom: 0; width: 11px; height: 11px; border-radius: 50%; background: #7a86a6; border: 2px solid #0b1530; }
 .mic[data-state="listening"]::after { background: #2ee66b; }
 .mic[data-state="paused"]::after { background: #7a86a6; }
+.mic[data-state="off"] { opacity: 0.55; }
+.mic[data-state="off"]::before { content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 3px; margin-left: -1.5px; background: var(--red); border-radius: 2px; transform: rotate(45deg); }
 .mic[data-state="error"]::after, .mic[data-state="denied"]::after { background: var(--red); }
 .sets { border-collapse: collapse; font-weight: 800; font-size: clamp(13px, 4.5vh, 22px); font-variant-numeric: tabular-nums; }
 .sets td { padding: 1px 8px; text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.2); }

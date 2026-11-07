@@ -2,6 +2,12 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.4.2] - 2026-11-07
+### Fixed
+- Voice control never started in a match on Android (broken since 0.3.2). The mic started, Bolo's first line paused it at once, and a recognizer aborted before it starts may never report that it ended, so the loop waited forever. Now the mic waits for Bolo's line before starting, a stopped recognizer is dropped at once, and one that does not start within 5 s is replaced ("mic stuck: restart" in the heard log).
+### Added
+- The 🎙 next to the clock turns voice control on and off during the match (slashed when off). Each tap is in the heard log.
+
 ## [0.4.1] - 2026-11-07
 ### Added
 - ⚙️ Ajustes → «Probar micrófono»: asks for the mic permission inside the tap, shows the permission state before and after, then listens for 6 seconds and shows what Bolo heard. When something fails it says how to fix it (site blocked in Chrome, or the Google app without mic permission) and the result can be copied.

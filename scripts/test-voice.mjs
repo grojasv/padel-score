@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 
 const require = createRequire(import.meta.url);
-const { match } = require(join(dirname(fileURLToPath(import.meta.url)), '..', 'voice.js'));
+const { match, listen } = require(join(dirname(fileURLToPath(import.meta.url)), '..', 'voice.js'));
 
 const cases = [
   ['rojo', {}, { cmd: 'point', team: 'red' }],
@@ -42,5 +42,63 @@ let fails = 0;
 for (const [text, opts, want] of cases) {
   try { assert.deepEqual(match(text, opts), want); } catch { fails++; console.error(`✗ "${text}" ${JSON.stringify(opts)} → ${JSON.stringify(match(text, opts))}, want ${JSON.stringify(want)}`); }
 }
-console.log(`${cases.length - fails} passed${fails ? `, ${fails} FAILED` : ''}`);
+// ---------- the listen loop, with a fake recognizer like Android's: abort() before onstart sends no onend ----------
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+let recs = [];
+class AndroidRec {
+  constructor() { this.live = false; this.ended = false; recs.push(this); }
+  start() { this.t = setTimeout(() => { this.live = true; this.onstart?.(); }, 20); }
+  abort() { clearTimeout(this.t); if (this.live) setTimeout(() => { this.live = false; this.ended = true; this.onend?.(); }, 10); }
+  stop() { this.abort(); }
+}
+globalThis.window = { SpeechRecognition: AndroidRec };
+const loops = [
+  ['paused before it starts, then resumed: listens again', async () => {
+    recs = []; const states = [];
+    const l = listen({ onState: (s) => states.push(s) });
+    l.pause(); await wait(5); l.resume(); await wait(60);
+    assert.equal(states.at(-1), 'listening');
+    assert.equal(recs.filter((r) => r.live).length, 1);
+    l.stop();
+  }],
+  ['created held: no recognizer until resume', async () => {
+    recs = [];
+    const l = listen({ held: true, onState: () => {} });
+    await wait(40); assert.equal(recs.length, 0);
+    l.resume(); await wait(40); assert.equal(recs.filter((r) => r.live).length, 1);
+    l.stop();
+  }],
+  ['a late onend from an old recognizer does not stop the new one', async () => {
+    recs = []; const states = [];
+    const l = listen({ onState: (s) => states.push(s) });
+    await wait(40); l.pause(); l.resume(); await wait(60);
+    assert.equal(states.at(-1), 'listening');
+    assert.equal(recs.filter((r) => r.live && !r.ended).length, 1);
+    l.stop();
+  }],
+  ['a recognizer that never starts is replaced by the watchdog', async () => {
+    recs = []; const traces = [];
+    class Dead extends AndroidRec { start() {} }
+    globalThis.window = { SpeechRecognition: Dead };
+    const l = listen({ startMs: 30, onState: () => {}, onTrace: (s) => traces.push(s) });
+    try {
+      await wait(400); // 30 ms watchdog, then a new recognizer 250 ms later
+      assert.ok(recs.length >= 2, `only ${recs.length} recognizer`);
+      assert.ok(traces.includes('mic stuck: restart'));
+    } finally { l.stop(); globalThis.window = { SpeechRecognition: AndroidRec }; }
+  }],
+  ['retry (the mic button) always makes a fresh recognizer', async () => {
+    recs = [];
+    const l = listen({ onState: () => {} });
+    l.pause(); l.retry(); await wait(40);
+    assert.equal(recs.length, 2); assert.ok(recs[1].live);
+    l.stop();
+  }],
+];
+let loopFails = 0;
+for (const [name, fn] of loops) {
+  try { await fn(); } catch (e) { loopFails++; console.error(`✗ listen: ${name}: ${e.message}`); }
+}
+fails += loopFails;
+console.log(`${cases.length + loops.length - fails} passed${fails ? `, ${fails} FAILED` : ''}`);
 if (fails) process.exit(1);

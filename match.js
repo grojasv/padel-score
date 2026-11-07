@@ -45,6 +45,10 @@
     heardEmpty: { es: 'Todavía no ha oído nada.', ca: 'Encara no ha sentit res.', en: 'Nothing heard yet.' },
     copy: { es: 'Copiar para enviar', ca: 'Copia per enviar', en: 'Copy to send' },
     copied: { es: 'Copiado', ca: 'Copiat', en: 'Copied' },
+    micOnTap: { es: 'micro encendido', ca: 'micro encès', en: 'mic on' },
+    micOffTap: { es: 'micro apagado', ca: 'micro apagat', en: 'mic off' },
+    micIsOff: { es: 'Micro apagado: toca para encenderlo', ca: 'Micro apagat: toca per encendre’l', en: 'Mic off: tap to turn it on' },
+    micIsOn: { es: 'Micro encendido: toca para apagarlo', ca: 'Micro encès: toca per apagar-lo', en: 'Mic on: tap to turn it off' },
     micBlocked: { es: 'Micrófono bloqueado: toca aquí para permitirlo', ca: 'Micròfon bloquejat: toca aquí per permetre’l', en: 'Microphone blocked: tap here to allow it' },
     micHow: { es: 'Si no sale la pregunta: en Chrome, toca el candado junto a la dirección → Permisos → Micrófono → Permitir. Si la app está instalada: Ajustes de Android → Apps → Chrome → Permisos → Micrófono.', ca: 'Si no surt la pregunta: a Chrome, toca el cadenat al costat de l’adreça → Permisos → Micròfon → Permet. Si l’app està instal·lada: Configuració d’Android → Aplicacions → Chrome → Permisos → Micròfon.', en: 'If no prompt appears: in Chrome, tap the lock next to the address → Permissions → Microphone → Allow. If the app is installed: Android Settings → Apps → Chrome → Permissions → Microphone.' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
@@ -351,28 +355,48 @@
       if (s === 'listening' && !loggedListening) { loggedListening = true; heard({ text: 'mic on', cmd: null, out: 'ok' }); }
       if ((s === 'denied' || s === 'unsupported') && s !== was) heard({ text: `mic ${s}`, cmd: null, out: 'error' });
       const d = el.querySelector('.mic');
-      if (d) { d.dataset.state = s; d.title = micTitle(); }
+      if (d) { d.dataset.state = micShown(); d.title = micTitle(); }
       if ((s === 'denied') !== (was === 'denied')) render(); // show or hide the "mic blocked" help
     }
     function startListening() {
-      if (!m.setup.voiceInput || !window.Voice?.supported() || listener || starting || m.state.finished) return;
+      if (!m.setup.voiceInput || m.micOff || !window.Voice?.supported() || listener || starting || m.state.finished) return;
       starting = true;
       (micReady || Promise.resolve('unknown')).then((perm) => {
         starting = false;
         if (perm.startsWith('error')) heard({ text: `mic ${perm}`, cmd: null, out: 'error' });
         if (perm === 'denied') { setMic('denied'); return; }
-        if (closed || listener || m.state.finished || m.pausedAt) return;
+        if (closed || listener || m.micOff || m.state.finished || m.pausedAt) return;
         listener = Voice.listen({
+          // Bolo is mid-sentence: start held, so the first recognizer starts after him (not started and aborted).
+          held: talking || (!!synth?.speaking && !m.setup.muted),
+          onTrace: (text) => heard({ text, cmd: null, out: 'error' }),
           lang: getLang(), strict: !!m.setup.strict, names: m.setup.names || {},
           onCommand: command,
           isQuiet: quiet,
           onHeard: (h) => heard({ text: h.text, cmd: h.cmd ? h.cmd.cmd + (h.cmd.team ? `:${h.cmd.team}` : '') : null, out: h.outcome }),
           onState: setMic,
         });
-        if (synth?.speaking && !m.setup.muted) listener?.pause(); // Bolo is mid-sentence: wait for him
       });
     }
-    const micTitle = () => (micState === 'denied' ? t(TEXT.micDenied) : micState === 'error' ? t(TEXT.micError) : t(TEXT.voice));
+    // The 🎙 button turns voice control on and off for this match. A blocked mic is always a "turn on" (askMic is
+    // inside the tap, so Chrome can show its prompt), and turning on always starts a fresh recognizer.
+    function toggleMic(forceOn) {
+      const on = forceOn || m.micOff || !m.setup.voiceInput || micState === 'denied' || micState === 'off';
+      if (!on) {
+        m.micOff = true; save();
+        listener?.stop(); listener = null; setMic('off');
+        heard({ tap: 'micOffTap' });
+        render(); return;
+      }
+      m.micOff = false; m.setup.voiceInput = true; save();
+      heard({ tap: 'micOnTap' });
+      askMic().then(() => (listener ? listener.retry() : startListening()));
+      render();
+    }
+    // The dot: 'off' (slashed) only when the player turned voice off; a mic that is still starting shows as paused.
+    const micShown = () => (m.micOff || !m.setup.voiceInput ? 'off' : micState === 'off' ? 'paused' : micState);
+    const micTitle = () => (m.micOff || !m.setup.voiceInput ? t(TEXT.micIsOff) : micState === 'denied' ? t(TEXT.micDenied)
+      : micState === 'error' ? t(TEXT.micError) : t(TEXT.micIsOn));
 
     // ---------- render ----------
     function teamHalf(team) {
@@ -455,7 +479,7 @@
           <div class="centre">
             <div class="c-top">
               <span class="m-clock${lim ? ' limit' : ''}">${lim ? fmt(lim - elapsed()) : fmt(elapsed())}</span>
-              ${m.setup.voiceInput && window.Voice?.supported() ? `<button class="mic" data-act="mic" data-state="${micState}" title="${esc(micTitle())}" type="button" aria-label="${esc(t(TEXT.voice))}">🎙</button>` : ''}
+              ${window.Voice?.supported() ? `<button class="mic" data-act="mic" data-state="${micShown()}" title="${esc(micTitle())}" type="button" aria-label="${esc(micTitle())}" aria-pressed="${m.micOff || !m.setup.voiceInput ? 'false' : 'true'}">🎙</button>` : ''}
             </div>
             ${setsTable()}
             <div class="m-badge">${esc(badge())}</div>
@@ -524,7 +548,7 @@
       else if (act === 'mute') { m.setup.muted = !m.setup.muted; if (m.setup.muted) synth?.cancel(); save(); render(); }
       else if (act === 'pause') pause();
       else if (act === 'resume') resume();
-      else if (act === 'mic') askMic().then(() => (listener ? listener.retry() : startListening())); // inside the tap: may show the prompt
+      else if (act === 'mic') toggleMic(b.classList.contains('m-micblocked'));
       else if (act === 'bolo') { const w = el.querySelector('.bolo-wrap'); w.classList.remove('bounce'); void w.offsetWidth; w.classList.add('bounce'); speak(fullScore()); }
       else if (act === 'exit') { if (confirm(t(TEXT.exitAsk))) { close(); opts.onExit?.(); } }
       else if (act === 'save') { const done = m; close(); opts.onFinish?.(done); }
