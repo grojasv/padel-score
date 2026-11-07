@@ -286,3 +286,9 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 #setupForm .first-of { grid-template-columns: 74px 1fr; align-items: center; gap: 6px; }
 #setupForm .seg label > span { padding: 6px 11px; font-size: 14px; }
 #setupForm .name { padding: 7px 10px; }
+
+.mictest { border: 2px solid var(--line, currentColor); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.mictest ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.mictest li { display: flex; justify-content: space-between; gap: 10px; }
+.mictest li b { text-align: right; overflow-wrap: anywhere; }
+.mictest .verdict { margin: 0; font-size: 14px; line-height: 1.4; font-weight: 600; }

@@ -2,6 +2,10 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.4.1] - 2026-11-07
+### Added
+- ⚙️ Ajustes → «Probar micrófono»: asks for the mic permission inside the tap, shows the permission state before and after, then listens for 6 seconds and shows what Bolo heard. When something fails it says how to fix it (site blocked in Chrome, or the Google app without mic permission) and the result can be copied.
+
 ## [0.4.0] — 2026-11-06
 ### Changed
 - **The new-match screen has only the essentials:**

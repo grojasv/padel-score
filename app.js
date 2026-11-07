@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.4.0'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.4.1'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -45,6 +45,22 @@
     settings: { es: 'Ajustes', ca: 'Ajustos', en: 'Settings' },
     settingsHelp: { es: 'Las reglas de tus partidos. Se guardan al momento y se usan en cada partido nuevo.', ca: 'Les regles dels teus partits. Es desen al moment i s’usen a cada partit nou.', en: 'The rules for your matches. Saved straight away and used for every new match.' },
     saved: { es: 'Guardado', ca: 'Desat', en: 'Saved' },
+    micTest: { es: 'Probar micrófono', ca: 'Provar micròfon', en: 'Test microphone' },
+    micTestHelp: { es: 'Pide el permiso y escucha 6 segundos. Di «rojo».', ca: 'Demana el permís i escolta 6 segons. Digues «vermell».', en: 'Asks for permission and listens for 6 seconds. Say “red”.' },
+    mtBefore: { es: 'Permiso antes', ca: 'Permís abans', en: 'Permission before' },
+    mtAfter: { es: 'Permiso ahora', ca: 'Permís ara', en: 'Permission now' },
+    mtAccess: { es: 'Acceso al micro', ca: 'Accés al micro', en: 'Mic access' },
+    mtSpeak: { es: 'Habla ahora: di «rojo»…', ca: 'Parla ara: digues «vermell»…', en: 'Speak now: say “red”…' },
+    mtHeard: { es: 'Bolo oyó', ca: 'En Bolo ha sentit', en: 'Bolo heard' },
+    mtNothing: { es: 'nada', ca: 'res', en: 'nothing' },
+    mtRecError: { es: 'Error del reconocimiento', ca: 'Error del reconeixement', en: 'Recognition error' },
+    mtOk: { es: '✅ El micrófono funciona.', ca: '✅ El micròfon funciona.', en: '✅ The microphone works.' },
+    mtBlocked: { es: '⛔ Chrome tiene el micrófono bloqueado para esta web y ya no pregunta. Arréglalo así: en Chrome, toca el candado (o ⓘ) junto a la dirección → Permisos → Micrófono → Permitir (o «Restablecer permisos»). Si usas la app instalada: mantén pulsado su icono → ⓘ Información → Permisos → Micrófono → Permitir. Después vuelve a probar.', ca: '⛔ Chrome té el micròfon bloquejat per a aquest web i ja no pregunta. Arregla-ho així: a Chrome, toca el cadenat (o ⓘ) al costat de l’adreça → Permisos → Micròfon → Permet (o «Restableix els permisos»). Si fas servir l’app instal·lada: mantén premuda la icona → ⓘ Informació → Permisos → Micròfon → Permet. Després torna a provar.', en: '⛔ Chrome has blocked the microphone for this site and no longer asks. Fix it: in Chrome, tap the lock (or ⓘ) next to the address → Permissions → Microphone → Allow (or “Reset permissions”). If you use the installed app: long-press its icon → ⓘ App info → Permissions → Microphone → Allow. Then test again.' },
+    mtService: { es: '⛔ Chrome deja usar el micro, pero el reconocimiento de voz no. En Android: Ajustes → Apps → Google → Permisos → Micrófono → Permitir. Después vuelve a probar.', ca: '⛔ Chrome deixa fer servir el micro, però el reconeixement de veu no. A Android: Configuració → Aplicacions → Google → Permisos → Micròfon → Permet. Després torna a provar.', en: '⛔ Chrome can use the mic, but speech recognition cannot. On Android: Settings → Apps → Google → Permissions → Microphone → Allow. Then test again.' },
+    mtSilent: { es: '⚠️ Hay permiso, pero no se oyó nada. Habla más cerca o comprueba la conexión a internet.', ca: '⚠️ Hi ha permís, però no s’ha sentit res. Parla més a prop o comprova la connexió a internet.', en: '⚠️ Permission is fine, but nothing was heard. Speak closer or check the internet connection.' },
+    mtOther: { es: '⚠️ Algo falló. Copia este resultado y envíalo.', ca: '⚠️ Alguna cosa ha fallat. Copia aquest resultat i envia’l.', en: '⚠️ Something failed. Copy this result and send it.' },
+    mtCopy: { es: 'Copiar resultado', ca: 'Copiar resultat', en: 'Copy result' },
+    mtCopied: { es: 'Copiado', ca: 'Copiat', en: 'Copied' },
     change: { es: 'Cambiar', ca: 'Canvia', en: 'Change' },
     stbShort: { es: 'Súper tie-break', ca: 'Súper tie-break', en: 'Super tie-break' },
     back: { es: '‹ Volver', ca: '‹ Torna', en: '‹ Back' },
@@ -232,7 +248,10 @@
           <label class="check"><input type="checkbox" name="talk"${s.muted ? '' : ' checked'}> ${esc(t(TEXT.talk))}</label>
           ${voiceOk ? `<label class="check"><input type="checkbox" name="listen"${s.voiceInput ? ' checked' : ''}> ${esc(t(TEXT.listen))}</label>
           <label class="check sub"><input type="checkbox" name="strict"${s.strict ? ' checked' : ''}> ${esc(t(TEXT.strict))}</label>
-          <p class="help">${esc(t(TEXT.voiceHelp))}</p>` : `<p class="help">${esc(t(TEXT.noVoice))}</p>`}
+          <p class="help">${esc(t(TEXT.voiceHelp))}</p>
+          <button class="btn small" id="micTest" type="button">🎙 ${esc(t(TEXT.micTest))}</button>
+          <p class="help">${esc(t(TEXT.micTestHelp))}</p>
+          <div class="mictest" id="micResult" aria-live="polite" hidden></div>` : `<p class="help">${esc(t(TEXT.noVoice))}</p>`}
         </fieldset>
         <p class="saved" id="savedNote" aria-live="polite"></p>
         <a class="btn go big" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
@@ -246,6 +265,55 @@
       store.set(KEY.setup, JSON.stringify(next));
       $('savedNote').textContent = `✓ ${t(TEXT.saved)}`;
     });
+    $('micTest')?.addEventListener('click', (e) => micTest(e.currentTarget));
+  }
+
+  // Mic check (Ajustes): permission state before, the permission request (inside the tap, so Chrome can show its
+  // prompt), the state after, then 6 seconds of real recognition. Each step is shown, with the fix for what failed.
+  const permState = () => (navigator.permissions?.query({ name: 'microphone' }).then((p) => p.state).catch(() => '?') || Promise.resolve('?'));
+  async function micTest(btn) {
+    const box = $('micResult');
+    const rows = [];
+    let verdict = '';
+    const show = () => {
+      box.hidden = false;
+      box.innerHTML = `<ul>${rows.map(([k, v]) => `<li><span>${esc(k)}</span><b>${esc(v)}</b></li>`).join('')}</ul>
+        ${verdict ? `<p class="verdict">${esc(verdict)}</p><button class="btn small" id="micCopy" type="button">📋 ${esc(t(TEXT.mtCopy))}</button>` : ''}`;
+      $('micCopy')?.addEventListener('click', async (ev) => {
+        const text = [`Padel Score v${VERSION} · ${navigator.userAgent}`, ...rows.map(([k, v]) => `${k}: ${v}`), verdict].join('\n');
+        try { await navigator.clipboard.writeText(text); ev.currentTarget.textContent = `✓ ${t(TEXT.mtCopied)}`; } catch { ev.currentTarget.textContent = '✗'; }
+      });
+    };
+    btn.disabled = true;
+    const access = navigator.mediaDevices?.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => { st.getTracks().forEach((tr) => tr.stop()); return 'ok'; }, (err) => err?.name || 'error')
+      : Promise.resolve('no getUserMedia');
+    rows.push([t(TEXT.mtBefore), await permState()]); show();
+    const got = await access;
+    rows.push([t(TEXT.mtAccess), got], [t(TEXT.mtAfter), await permState()]); show();
+    if (got !== 'ok') {
+      verdict = got === 'NotAllowedError' || got === 'SecurityError' ? t(TEXT.mtBlocked) : t(TEXT.mtOther);
+      show(); btn.disabled = false; return;
+    }
+    const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const result = await new Promise((done) => {
+      const rec = new R();
+      let said = '', err = '';
+      rec.lang = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' }[lang] || 'es-ES';
+      rec.interimResults = true; rec.continuous = true;
+      rec.onresult = (ev) => { said = [...ev.results].map((r) => r[0].transcript).join(' ').trim(); rows[3] = [t(TEXT.mtHeard), said]; show(); };
+      rec.onerror = (ev) => { err = ev.error || 'error'; };
+      rec.onend = () => { clearTimeout(timer); done({ said, err }); };
+      const timer = setTimeout(() => rec.stop(), 6000);
+      rows.push([t(TEXT.mtHeard), t(TEXT.mtSpeak)]); show();
+      try { rec.start(); } catch (x) { err = x?.name || 'start failed'; clearTimeout(timer); done({ said, err }); }
+    });
+    rows[3] = [t(TEXT.mtHeard), result.said || t(TEXT.mtNothing)];
+    if (result.err && result.err !== 'no-speech' && result.err !== 'aborted') rows.push([t(TEXT.mtRecError), result.err]);
+    verdict = result.said ? t(TEXT.mtOk)
+      : result.err === 'not-allowed' || result.err === 'service-not-allowed' ? t(TEXT.mtService)
+      : !result.err || result.err === 'no-speech' || result.err === 'network' ? t(TEXT.mtSilent) : t(TEXT.mtOther);
+    show(); btn.disabled = false;
   }
 
   function openMatch() {
