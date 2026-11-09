@@ -228,7 +228,8 @@
     function bubble(text) {
       const b = el.querySelector('.m-bubble');
       if (!b) return;
-      b.textContent = text; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      b.textContent = text.replace(/([.!?] )(\p{Ll})/gu, (_, a, c) => a + c.toUpperCase()); // "Juego rojo. Seis iguales."
+      b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
     }
 
     // ---------- clock ----------
@@ -380,8 +381,16 @@
     function remoteScore() {
       if (!m.setup.remote || !('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
       const s = m.state, p = Scoring.display(s);
-      const title = s.finished ? `${s.setsWon.red}-${s.setsWon.blue}` : `${p.red} - ${p.blue}`;
-      const artist = [s.sets.length ? `${t(TEXT.sets)} ${s.setsWon.red}-${s.setsWon.blue}` : '', `${t(TEXT.games)} ${s.games.red}-${s.games.blue}`].filter(Boolean).join(' · ');
+      const sets = s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`));
+      let title, artist;
+      if (s.finished) { // the winner, and every set: "6-4 · 6-7 · 10-8"
+        title = s.winner === 'draw' ? t(TEXT.draw) : t(TEXT.winner).replace('{t}', teamLabel(s.winner));
+        artist = [...sets, ...(s.games.red || s.games.blue ? [`${s.games.red}-${s.games.blue}`] : [])].join(' · ');
+      } else {
+        title = `${p.red} - ${p.blue}`;
+        const now = s.tiebreak === 'stb' ? t(TEXT.stb) : `${t(TEXT.games)} ${s.games.red}-${s.games.blue}${s.tiebreak ? ` · ${t(TEXT.tb)}` : ''}`;
+        artist = [s.sets.length ? `${t(TEXT.sets)} ${s.setsWon.red}-${s.setsWon.blue}` : '', now].filter(Boolean).join(' · ');
+      }
       try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist, album: 'Padel Score', artwork: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }] }); } catch { /* ignore */ }
     }
 

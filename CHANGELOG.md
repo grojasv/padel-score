@@ -2,6 +2,15 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.5.1] - 2026-11-09
+### Changed
+- The band shows the winner and every set at the end ("¡Gana Guille · Ana!", "6-4 · 6-7 · 10-8"), "Súper tie-break" during it, and "Tie-break" next to 6-6.
+### Fixed
+- Bolo's bubble no longer slips under the buttons on a short screen (two lines at most, Bolo shrinks instead), and Bolo is sized by the height Chrome's bars leave free.
+- Bubble sentences start with a capital ("Juego rojo. Seis iguales.").
+### Tested
+- A full match (6-4, 6-7, 10-8) on an Android 17 emulator with Chrome 149, scored only with Android media buttons (the band's path): 127 presses, every score equal to scoring.js, including a game with the phone locked, a paused match, golden point, undo and undo from the finish.
+
 ## [0.5.0] - 2026-11-09
 ### Added
 - ⚙️ Ajustes → Mando → «Pulsera o mando Bluetooth». During a match the app plays a silent track, so the music buttons of a band (Mi Band via Mi Fitness), watch or headphones control the score: ⏮ point red, ⏭ point blue, ⏯ undo. The band shows the score as the "song" (points as title, games as artist).
