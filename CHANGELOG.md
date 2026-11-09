@@ -2,6 +2,13 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.5.0] - 2026-11-09
+### Added
+- ⚙️ Ajustes → Mando → «Pulsera o mando Bluetooth». During a match the app plays a silent track, so the music buttons of a band (Mi Band via Mi Fitness), watch or headphones control the score: ⏮ point red, ⏭ point blue, ⏯ undo. The band shows the score as the "song" (points as title, games as artist).
+- Bluetooth remotes and keyboards: ← / PageUp point red, → / PageDown point blue, ↑ / ↓ / Backspace undo. The same action twice within 400 ms counts once. Every remote press is in the heard log (⌚), and so is each unknown key the first time, so a new clicker can be mapped.
+### Fixed
+- The empty mic-test box no longer shows in Ajustes before the test runs.
+
 ## [0.4.2] - 2026-11-07
 ### Fixed
 - Voice control never started in a match on Android (broken since 0.3.2). The mic started, Bolo's first line paused it at once, and a recognizer aborted before it starts may never report that it ended, so the loop waited forever. Now the mic waits for Bolo's line before starting, a stopped recognizer is dropped at once, and one that does not start within 5 s is replaced ("mic stuck: restart" in the heard log).

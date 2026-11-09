@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.4.2'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.5.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -45,6 +45,9 @@
     settings: { es: 'Ajustes', ca: 'Ajustos', en: 'Settings' },
     settingsHelp: { es: 'Las reglas de tus partidos. Se guardan al momento y se usan en cada partido nuevo.', ca: 'Les regles dels teus partits. Es desen al moment i s’usen a cada partit nou.', en: 'The rules for your matches. Saved straight away and used for every new match.' },
     saved: { es: 'Guardado', ca: 'Desat', en: 'Saved' },
+    remoteLegend: { es: 'Mando', ca: 'Comandament', en: 'Remote' },
+    remote: { es: 'Pulsera o mando Bluetooth', ca: 'Polsera o comandament Bluetooth', en: 'Band or Bluetooth remote' },
+    remoteHelp: { es: 'Con los botones de música de la pulsera (Mi Band, reloj o auriculares): ⏮ punto rojo, ⏭ punto azul, ⏯ deshacer. Un mando o teclado Bluetooth: ← rojo, → azul, ↑ o ↓ deshacer. Necesita Mi Fitness con acceso a notificaciones. El marcador sale en la pulsera como si fuera una canción.', ca: 'Amb els botons de música de la polsera (Mi Band, rellotge o auriculars): ⏮ punt vermell, ⏭ punt blau, ⏯ desfer. Un comandament o teclat Bluetooth: ← vermell, → blau, ↑ o ↓ desfer. Necessita Mi Fitness amb accés a les notificacions. El marcador surt a la polsera com si fos una cançó.', en: 'With the band’s music buttons (Mi Band, watch or headphones): ⏮ point red, ⏭ point blue, ⏯ undo. A Bluetooth remote or keyboard: ← red, → blue, ↑ or ↓ undo. Needs Mi Fitness with notification access. The score shows on the band like a song.' },
     micTest: { es: 'Probar micrófono', ca: 'Provar micròfon', en: 'Test microphone' },
     micTestHelp: { es: 'Pide el permiso y escucha 6 segundos. Di «rojo».', ca: 'Demana el permís i escolta 6 segons. Digues «vermell».', en: 'Asks for permission and listens for 6 seconds. Say “red”.' },
     mtBefore: { es: 'Permiso antes', ca: 'Permís abans', en: 'Permission before' },
@@ -147,7 +150,7 @@
           ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
       }).join('')}</ul>` : `<p class="empty">${esc(t(TEXT.noHistory))}</p>`}`;
     $('heroBolo').addEventListener('click', (e) => { const m = e.currentTarget; m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce'); });
-    $('continueBtn')?.addEventListener('click', () => { Match.unlock({ mic: !!cur.setup.voiceInput }); location.hash = '#/match'; });
+    $('continueBtn')?.addEventListener('click', () => { Match.unlock({ mic: !!cur.setup.voiceInput, remote: !!cur.setup.remote }); location.hash = '#/match'; });
     view.querySelectorAll('[data-heard]').forEach((b) => b.addEventListener('click', () => {
       const e = log[Number(b.dataset.heard)];
       const box = document.createElement('div');
@@ -200,7 +203,7 @@
       e.preventDefault();
       const f = new FormData(form);
       if (current() && !confirm(t(TEXT.replaceAsk))) return;
-      Match.unlock({ mic: voiceOk && !!s.voiceInput }); // inside the tap: audio, speech, wake lock, mic permission
+      Match.unlock({ mic: voiceOk && !!s.voiceInput, remote: !!s.remote }); // inside the tap: audio, speech, wake lock, mic permission
       const serve = f.get('serve');
       const setup = {
         ...s,
@@ -222,7 +225,7 @@
     const deuce = { golden: TEXT.golden, advantage: TEXT.advantage, star: TEXT.star }[s.deuce];
     return [t(s.mode === 'singles' ? TEXT.singles : TEXT.doubles), t(deuce), t(s.superTiebreak ? TEXT.stbShort : TEXT.fullSet),
       s.timeLimit ? `⏳ ${s.timeLimit} ${t(TEXT.min)}` : t(TEXT.noLimit),
-      `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}`].join(' · ');
+      `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}${s.remote ? ' ⌚' : ''}`].join(' · ');
   }
 
   // Ajustes: the default rules and voice options. Every change is saved at once and used by the next match.
@@ -253,6 +256,9 @@
           <p class="help">${esc(t(TEXT.micTestHelp))}</p>
           <div class="mictest" id="micResult" aria-live="polite" hidden></div>` : `<p class="help">${esc(t(TEXT.noVoice))}</p>`}
         </fieldset>
+        <fieldset><legend>${esc(t(TEXT.remoteLegend))}</legend>
+          <label class="check"><input type="checkbox" name="remote"${s.remote ? ' checked' : ''}> ⌚ ${esc(t(TEXT.remote))}</label>
+          <p class="help">${esc(t(TEXT.remoteHelp))}</p></fieldset>
         <p class="saved" id="savedNote" aria-live="polite"></p>
         <a class="btn go big" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
       </form>`;
@@ -260,7 +266,7 @@
     form.addEventListener('change', () => {
       const f = new FormData(form);
       const next = { ...loadSetup(), mode: f.get('mode'), deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1',
-        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict') };
+        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict'), remote: !!f.get('remote') };
       if (voiceOk) next.voiceInput = !!f.get('listen');
       store.set(KEY.setup, JSON.stringify(next));
       $('savedNote').textContent = `✓ ${t(TEXT.saved)}`;

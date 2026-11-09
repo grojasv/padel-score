@@ -289,6 +289,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 #setupForm .seg label > span { padding: 6px 11px; font-size: 14px; }
 #setupForm .name { padding: 7px 10px; }
 
+.mictest[hidden] { display: none; }
 .mictest { border: 2px solid var(--line, currentColor); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
 .mictest ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
 .mictest li { display: flex; justify-content: space-between; gap: 10px; }

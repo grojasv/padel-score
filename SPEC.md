@@ -41,6 +41,7 @@ Split since v0.4.0:
 - **Ajustes** (`#/settings`, a button on the hub) holds the rest: mode, 40-40, third set, time and voice. Each change is saved at once.
 - **Mic button in a match**: the 🎙 next to the clock turns voice control on and off for that match (`m.micOff`). Turning it on asks for the mic inside the tap and always starts a fresh recognizer.
 - **Listen loop**: one recognizer at a time; pause/stop drop it at once and ignore its late events; a recognizer with no `onstart` in 5 s is replaced. The listener is created held while Bolo speaks, so it is never started and aborted at once.
+- **Remote** (Ajustes → Mando, `setup.remote`): a silent 10 s looping WAV, started inside the Start tap, makes the match the phone's playing media. Media Session handlers: previoustrack/seekbackward = red, nexttrack/seekforward = blue, play/pause = undo. keydown: ←/PageUp red, →/PageDown blue, ↑/↓/Backspace undo (volume keys never reach the page). Remote presses skip the mic's anti-echo gate; the same action within 400 ms counts once. Metadata: title = points, artist = games/sets. If the track is paused (audio focus taken by speech), it is restarted. Untested on a real band: needs Mi Fitness with notification access.
 - **Probar micrófono** (in Ajustes → Voz): permission state before and after a getUserMedia request made inside the tap, then 6 s of real recognition. Each failure shows its fix, and the result can be copied to send.
 
 Everything below is remembered between matches.

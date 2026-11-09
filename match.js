@@ -99,9 +99,35 @@
       .catch((e) => (e?.name === 'NotAllowedError' || e?.name === 'SecurityError' ? 'denied' : `error ${e?.name || ''}`.trim()));
     return micReady;
   }
-  // Must be called inside a tap handler. mic: also ask for the microphone.
-  function unlock({ mic = false } = {}) {
+  // ---------- remote: band music buttons and Bluetooth clickers ----------
+  // A band's music card (Mi Band via Mi Fitness, other watches, headphones) controls whatever is "playing" on the
+  // phone. A silent looping track makes the match the playing media, so Chrome passes the buttons to the Media
+  // Session handlers below. The track must start inside a tap (autoplay rules), and is 10 s long because Chrome
+  // shows no media controls for sounds under 5 s. It is plain silence at normal volume (a muted one may be ignored).
+  let remoteAudio = null;
+  function silentWav(seconds = 10, rate = 8000) {
+    const n = seconds * rate, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+    const str = (o, x) => [...x].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+    v.setUint16(32, 1, true); v.setUint16(34, 8, true); str(36, 'data'); v.setUint32(40, n, true);
+    new Uint8Array(buf, 44).fill(128); // 8-bit silence
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function startRemoteAudio() {
+    if (!('mediaSession' in navigator)) return;
+    if (!remoteAudio) {
+      remoteAudio = new Audio(silentWav());
+      remoteAudio.loop = true;
+      remoteAudio.setAttribute('playsinline', '');
+    }
+    remoteAudio.play().catch(() => { /* retried on the next tap or when the page is visible */ });
+  }
+
+  // Must be called inside a tap handler. mic: also ask for the microphone. remote: start the silent track.
+  function unlock({ mic = false, remote = false } = {}) {
     if (mic) askMic();
+    if (remote) startRemoteAudio();
     try {
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       audio.resume?.();
@@ -293,6 +319,72 @@
       else if (cmd.cmd === 'pause' && !m.pausedAt) pause();
       return 'ok';
     }
+    // ---------- remote (band music buttons, Bluetooth clickers, keyboards) ----------
+    // Left = red, right = blue, as on the screen: previous ⏮ / ← / PageUp score red, next ⏭ / → / PageDown score
+    // blue, play-pause / ↓ / ↑ / Backspace undo. A remote press is never dropped as an echo (that is only for
+    // the mic), but the same action twice within 400 ms counts once (some remotes send a key twice).
+    const REMOTE_KEYS = {
+      ArrowLeft: 'red', PageUp: 'red', MediaTrackPrevious: 'red',
+      ArrowRight: 'blue', PageDown: 'blue', MediaTrackNext: 'blue',
+      ArrowUp: 'undo', ArrowDown: 'undo', Backspace: 'undo', MediaPlayPause: 'undo',
+    };
+    let remoteLast = '', remoteAt = 0;
+    function remote(action, source) {
+      const now = Date.now();
+      if (action === remoteLast && now - remoteAt < 400) return;
+      remoteLast = action; remoteAt = now;
+      let out = 'ok';
+      if (m.pausedAt) out = 'none';
+      else if (action === 'undo') { if (m.stack.length) undo(); else out = 'none'; }
+      else if (m.state.finished) out = 'finished';
+      else addPoint(action);
+      heard({ text: `⌚ ${source}`, cmd: action === 'undo' ? 'undo' : `point:${action}`, out });
+    }
+    function onKey(e) {
+      if (e.target.closest?.('input,textarea,select')) return;
+      const action = REMOTE_KEYS[e.key];
+      if (!action) {
+        // Unknown keys are logged (once per key), so a new clicker can be mapped from the heard log.
+        if (!seenKeys.has(e.key)) { seenKeys.add(e.key); heard({ text: `⌚ ${e.key}`, cmd: null, out: 'none' }); }
+        return;
+      }
+      e.preventDefault();
+      remote(action, e.key);
+    }
+    const seenKeys = new Set();
+    const MEDIA = { previoustrack: 'red', seekbackward: 'red', nexttrack: 'blue', seekforward: 'blue', play: 'undo', pause: 'undo' };
+    function remoteOn() {
+      document.addEventListener('keydown', onKey);
+      if (!('mediaSession' in navigator)) return;
+      for (const [act, action] of Object.entries(MEDIA)) {
+        try { navigator.mediaSession.setActionHandler(act, () => { remote(action, act); keepRemotePlaying(); }); } catch { /* not supported here */ }
+      }
+      remoteAudio?.addEventListener('pause', keepRemotePlaying);
+      keepRemotePlaying();
+    }
+    function remoteOff() {
+      document.removeEventListener('keydown', onKey);
+      if (!('mediaSession' in navigator)) return;
+      for (const act of Object.keys(MEDIA)) { try { navigator.mediaSession.setActionHandler(act, null); } catch { /* not supported */ } }
+      remoteAudio?.removeEventListener('pause', keepRemotePlaying);
+      remoteAudio?.pause();
+      try { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } catch { /* old browser */ }
+    }
+    // Bolo's voice or the mic can take the audio focus and pause the track: start it again, or the band loses us.
+    function keepRemotePlaying() {
+      if (closed || !m.setup.remote || !remoteAudio) return;
+      try { navigator.mediaSession.playbackState = 'playing'; } catch { /* old browser */ }
+      if (remoteAudio.paused) setTimeout(() => { if (!closed && remoteAudio.paused) remoteAudio.play().catch(() => {}); }, 300);
+    }
+    // The band shows the "song": the points as the title, games (and sets) as the artist.
+    function remoteScore() {
+      if (!m.setup.remote || !('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+      const s = m.state, p = Scoring.display(s);
+      const title = s.finished ? `${s.setsWon.red}-${s.setsWon.blue}` : `${p.red} - ${p.blue}`;
+      const artist = [s.sets.length ? `${t(TEXT.sets)} ${s.setsWon.red}-${s.setsWon.blue}` : '', `${t(TEXT.games)} ${s.games.red}-${s.games.blue}`].filter(Boolean).join(' · ');
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist, album: 'Padel Score', artwork: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }] }); } catch { /* ignore */ }
+    }
+
     // ---------- the "what Bolo heard" log: phrases, what they did, and taps (a tap often means voice missed) ----------
     const HEARD_MAX = 250;
     function heard(entry) {
@@ -468,9 +560,10 @@
     }
 
     let editing = false, showHeard = false;
-    const heardButton = () => (m.setup.voiceInput ? `<button class="btn small ghost" data-act="heard" type="button">🎙 ${esc(t(TEXT.heard))} (${(m.heard || []).filter((h) => !h.tap).length})</button>` : '');
+    const heardButton = () => (m.setup.voiceInput || m.setup.remote ? `<button class="btn small ghost" data-act="heard" type="button">🎙 ${esc(t(TEXT.heard))} (${(m.heard || []).filter((h) => !h.tap).length})</button>` : '');
     function render() {
       if (closed) return;
+      remoteScore();
       const s = m.state;
       const lim = limitMs();
       el.innerHTML = `
@@ -533,7 +626,7 @@
         save(); render(); return;
       }
       const act = b.dataset.act;
-      if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
+      if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput, remote: !!m.setup.remote }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
       else if (act === 'heard') { showHeard = true; render(); }
       else if (act === 'close-heard') { showHeard = false; render(); }
@@ -563,6 +656,7 @@
       if (!m.state.finished) keepAwake();
       onTick();
       if (listener && !m.pausedAt) listener.resume();
+      keepRemotePlaying();
     }
     document.addEventListener('visibilitychange', onVisible);
 
@@ -572,6 +666,7 @@
       clearTimeout(speakTimer); clearTimeout(moodTimer); clearTimeout(flashTimer);
       listener?.stop(); listener = null;
       synth?.cancel();
+      if (m.setup.remote) remoteOff();
       document.removeEventListener('visibilitychange', onVisible);
       el.removeEventListener('pointerdown', onPointer);
       el.removeEventListener('click', onClick);
@@ -579,6 +674,7 @@
       wake = null;
     }
 
+    if (m.setup.remote) remoteOn();
     render();
     tick = setInterval(onTick, 500);
     if (unlocked) {
