@@ -62,6 +62,18 @@
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
+  // Line icons (24×24, stroke = currentColor), drawn for this app.
+  const ICON = {
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    more: '<circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    sound: '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
+    muted: '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>',
+    pause: '<rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/>',
+    exit: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+    mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/>',
+  };
+  const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
   const TAP_GUARD = 600;
 
   // ---------- sound (Web Audio beeps play even when the voice is muted) ----------
@@ -602,7 +614,7 @@
         ${s.endedBy === 'time' ? `<p class="playon">${esc(t(TEXT.playOn))}</p><div class="row"><button class="btn" data-act="more-time" data-min="30" type="button">⏳ ${esc(t(TEXT.moreTime))}</button><button class="btn" data-act="more-time" data-min="0" type="button">∞ ${esc(t(TEXT.noLimit))}</button></div>` : ''}
         <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
         ${heardButton()}
-        <div class="row"><button class="btn ghost" data-act="undo" type="button">↶ ${esc(t(TEXT.undoLast))}</button>
+        <div class="row"><button class="btn ghost" data-act="undo" type="button">${icon('undo')} ${esc(t(TEXT.undoLast))}</button>
         <button class="btn go" data-act="save" type="button">${esc(t(TEXT.save))}</button></div>
         </div>
       </div>`;
@@ -642,20 +654,20 @@
           <div class="centre">
             <div class="c-top">
               <span class="m-clock${lim ? ' limit' : ''}">${lim ? fmt(lim - elapsed()) : fmt(elapsed())}</span>
-              ${window.Voice?.supported() ? `<button class="mic" data-act="mic" data-state="${micShown()}" title="${esc(micTitle())}" type="button" aria-label="${esc(micTitle())}" aria-pressed="${m.micOff || !m.setup.voiceInput ? 'false' : 'true'}">🎙</button>` : ''}
+              ${window.Voice?.supported() ? `<button class="mic" data-act="mic" data-state="${micShown()}" title="${esc(micTitle())}" type="button" aria-label="${esc(micTitle())}" aria-pressed="${m.micOff || !m.setup.voiceInput ? 'false' : 'true'}">${icon('mic')}</button>` : ''}
             </div>
             ${setsTable()}
             <div class="m-badge">${esc(badge())}</div>
             <div class="bolo-wrap" data-act="bolo"></div>
             <div class="m-bubble" aria-live="polite"></div>
             <div class="c-tools">
-              <button class="undo-big" data-act="undo" type="button" ${m.stack.length ? '' : 'disabled'} aria-label="${esc(t(TEXT.undo))}"><span>↶</span><small>${esc(t(TEXT.undo))}</small></button>
-              <button class="more" data-act="menu" type="button" aria-expanded="${menuOpen}" aria-label="${esc(t(TEXT.more))}">•••</button>
+              <button class="undo-big" data-act="undo" type="button" ${m.stack.length ? '' : 'disabled'} aria-label="${esc(t(TEXT.undo))}"><span>${icon('undo')}</span><small>${esc(t(TEXT.undo))}</small></button>
+              <button class="more" data-act="menu" type="button" aria-expanded="${menuOpen}" aria-label="${esc(t(TEXT.more))}">${icon('more')}</button>
             ${menuOpen ? `<div class="c-menu" role="menu">
-              <button data-act="edit" type="button" role="menuitem"><span>✏️</span>${esc(t(TEXT.edit))}</button>
-              <button data-act="mute" type="button" role="menuitem"><span>${m.setup.muted ? '🔇' : '🔊'}</span>${esc(t(m.setup.muted ? TEXT.voiceOff : TEXT.voiceOn))}</button>
-              <button data-act="pause" type="button" role="menuitem"><span>⏸</span>${esc(t(TEXT.pause))}</button>
-              <button data-act="exit" type="button" role="menuitem"><span>✕</span>${esc(t(TEXT.exit))}</button>
+              <button data-act="edit" type="button" role="menuitem"><span>${icon('edit')}</span>${esc(t(TEXT.edit))}</button>
+              <button data-act="mute" type="button" role="menuitem"><span>${icon(m.setup.muted ? 'muted' : 'sound')}</span>${esc(t(m.setup.muted ? TEXT.voiceOff : TEXT.voiceOn))}</button>
+              <button data-act="pause" type="button" role="menuitem"><span>${icon('pause')}</span>${esc(t(TEXT.pause))}</button>
+              <button data-act="exit" type="button" role="menuitem"><span>${icon('exit')}</span>${esc(t(TEXT.exit))}</button>
             </div>` : ''}
             </div>
             <p class="rotate-hint">↻ ${esc(t(TEXT.rotate))}</p>

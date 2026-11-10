@@ -2,6 +2,10 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.6.2] - 2026-11-10
+### Changed
+- Match buttons use clean line icons (drawn as inline SVG) instead of emoji: undo, ••• menu, fix, sound on/off, pause, exit and the mic.
+
 ## [0.6.1] - 2026-11-10
 ### Changed
 - Match screen: one big gold **Deshacer** button. Fix, Bolo's voice, pause and exit moved into a ••• menu (tapping a half while it is open only closes it, so no point is scored by mistake).
