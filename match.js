@@ -56,6 +56,9 @@
     playOn: { es: '¿Seguís jugando?', ca: 'Continueu jugant?', en: 'Playing on?' },
     moreTime: { es: '+30 min', ca: '+30 min', en: '+30 min' },
     noLimit: { es: 'Sin límite', ca: 'Sense límit', en: 'No limit' },
+    more: { es: 'Más opciones', ca: 'Més opcions', en: 'More options' },
+    voiceOn: { es: 'Bolo habla', ca: 'En Bolo parla', en: 'Bolo talks' },
+    voiceOff: { es: 'Bolo callado', ca: 'En Bolo callat', en: 'Bolo muted' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
@@ -625,7 +628,7 @@
       </div></div>`;
     }
 
-    let editing = false, showHeard = false;
+    let editing = false, showHeard = false, menuOpen = false;
     const heardButton = () => (m.setup.voiceInput || m.setup.remote ? `<button class="btn small ghost" data-act="heard" type="button">🎙 ${esc(t(TEXT.heard))} (${(m.heard || []).filter((h) => !h.tap).length})</button>` : '');
     function render() {
       if (closed) return;
@@ -646,11 +649,14 @@
             <div class="bolo-wrap" data-act="bolo"></div>
             <div class="m-bubble" aria-live="polite"></div>
             <div class="c-tools">
-              <button class="tool" data-act="undo" type="button" ${m.stack.length ? '' : 'disabled'} aria-label="${esc(t(TEXT.undo))}">↶</button>
-              <button class="tool" data-act="edit" type="button" aria-label="${esc(t(TEXT.edit))}">✏️</button>
-              <button class="tool" data-act="mute" type="button" aria-label="${esc(t(TEXT.voice))}">${m.setup.muted ? '🔇' : '🔊'}</button>
-              <button class="tool" data-act="pause" type="button" aria-label="${esc(t(TEXT.pause))}">⏸</button>
-              <button class="tool" data-act="exit" type="button" aria-label="${esc(t(TEXT.exit))}">✕</button>
+              <button class="undo-big" data-act="undo" type="button" ${m.stack.length ? '' : 'disabled'} aria-label="${esc(t(TEXT.undo))}"><span>↶</span><small>${esc(t(TEXT.undo))}</small></button>
+              <button class="more" data-act="menu" type="button" aria-expanded="${menuOpen}" aria-label="${esc(t(TEXT.more))}">•••</button>
+            ${menuOpen ? `<div class="c-menu" role="menu">
+              <button data-act="edit" type="button" role="menuitem"><span>✏️</span>${esc(t(TEXT.edit))}</button>
+              <button data-act="mute" type="button" role="menuitem"><span>${m.setup.muted ? '🔇' : '🔊'}</span>${esc(t(m.setup.muted ? TEXT.voiceOff : TEXT.voiceOn))}</button>
+              <button data-act="pause" type="button" role="menuitem"><span>⏸</span>${esc(t(TEXT.pause))}</button>
+              <button data-act="exit" type="button" role="menuitem"><span>✕</span>${esc(t(TEXT.exit))}</button>
+            </div>` : ''}
             </div>
             <p class="rotate-hint">↻ ${esc(t(TEXT.rotate))}</p>
           </div>
@@ -672,6 +678,7 @@
     function onPointer(e) {
       const half = e.target.closest('.half');
       if (!half || editing || m.pausedAt || !unlocked) return;
+      if (menuOpen) { e.preventDefault(); menuOpen = false; render(); return; } // a tap beside the open menu only closes it
       e.preventDefault();
       const now = Date.now();
       if (now - lastTap < TAP_GUARD) return;
@@ -694,6 +701,8 @@
         save(); render(); return;
       }
       const act = b.dataset.act;
+      if (act === 'menu') { menuOpen = !menuOpen; render(); return; }
+      if (menuOpen) menuOpen = false; // any other button closes the menu
       if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput, remote: !!m.setup.remote }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
       else if (act === 'close-summary') hideSummary();

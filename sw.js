@@ -3,7 +3,7 @@
 // GitHub Pages sends max-age=600, so fetches use cache: 'no-cache' and a new release shows on the next open.
 // CACHE is named after the version (checked by scripts/validate.mjs). Each release changes this file, so the
 // browser installs the new worker, which takes over at once and deletes every older cache.
-const CACHE = 'padel-score-0.6.0';
+const CACHE = 'padel-score-0.6.1';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'match.js', 'scoring.js', 'voice.js', 'mascot.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png', 'data/lines.json'];
 

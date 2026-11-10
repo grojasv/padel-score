@@ -2,6 +2,11 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.6.1] - 2026-11-10
+### Changed
+- Match screen: one big gold **Deshacer** button. Fix, Bolo's voice, pause and exit moved into a ••• menu (tapping a half while it is open only closes it, so no point is scored by mistake).
+- A narrower centre and a smaller Bolo leave more room for the points (up to 56% of the height) and the games.
+
 ## [0.6.0] - 2026-11-10
 From Guille's first real match, with a tablet on the net.
 ### Added

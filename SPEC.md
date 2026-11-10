@@ -80,7 +80,7 @@ Everything below is remembered between matches.
 
 ## Scoreboard screen (landscape)
 - Two halves: **left red, right blue.** Each half shows a huge point score (15/30/40/AD, or tie-break digits), the games in the current set and the set scores, plus a 🎾 marker on the server (and the server's name if set).
-- A centre strip shows the clock (elapsed time, or remaining time if a limit is on), a mic status dot, Bolo (small, he reacts to every point) and **Deshacer**.
+- A narrow centre strip shows the clock (elapsed time, or remaining time if a limit is on), a mic status dot, the sets, a small Bolo (he reacts to every point), a big gold **Deshacer** and a ••• menu with Corregir, Bolo's voice, Pausa and Salir. A tap on a half while the menu is open only closes it.
 - **Tap a half** = point for that team. A 600 ms tap guard stops double taps.
 - **Long-press** the centre (or ✏️) opens the edit panel.
 - Pause / exit with confirm. Screen wake lock while a match is open.
