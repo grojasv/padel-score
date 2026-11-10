@@ -59,9 +59,12 @@
     more: { es: 'Más opciones', ca: 'Més opcions', en: 'More options' },
     voiceOn: { es: 'Bolo habla', ca: 'En Bolo parla', en: 'Bolo talks' },
     voiceOff: { es: 'Bolo callado', ca: 'En Bolo callat', en: 'Bolo muted' },
+    gamePoint: { es: 'Bola de juego', ca: 'Pilota de joc', en: 'Game point' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
+  // The scoring engine of a match: padel (scoring.js) or ping pong (pingpong.js). Both have the same functions.
+  const engine = (setup) => (setup?.sport === 'pingpong' ? window.PingPong : window.Scoring);
   // Line icons (24×24, stroke = currentColor), drawn for this app.
   const ICON = {
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
@@ -189,6 +192,10 @@
     const t = (o) => (o && (o[getLang()] ?? o.es)) || '';
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     let m = opts.match; // { setup, state, stack, startedAt, pausedMs, pausedAt, warned: [] }
+    const Scoring = engine(m.setup);
+    const pp = m.setup.sport === 'pingpong';
+    Bolo.sport = pp ? 'pingpong' : 'padel';
+    const BALL = pp ? '🏓' : '🎾';
     let lastTap = 0, listener = null, micState = 'off', flash = null, flashTimer = null, moodTimer = null, tick = null;
     let mood = 'idle', speakTimer = null, closed = false;
     const lastLine = {};
@@ -201,6 +208,7 @@
 
     // ---------- lines ----------
     function line(key, vars = {}) {
+      if (pp && lines?.[`pp${key[0].toUpperCase()}${key.slice(1)}`]) key = `pp${key[0].toUpperCase()}${key.slice(1)}`; // ping pong's own lines
       const pool = lines?.[key]?.[getLang()] || lines?.[key]?.es;
       if (!pool?.length) return '';
       let i = Math.floor(Math.random() * pool.length);
@@ -329,6 +337,11 @@
       const s = m.state, L = getLang();
       const n = (x) => Scoring.NUM[L]?.[x] ?? x;
       const parts = [];
+      if (pp) { // "Juegos uno cero. cinco tres"
+        if (s.sets.length) parts.push(`${t(TEXT.games)} ${n(s.games.red)} ${n(s.games.blue)}`);
+        if (s.points.red || s.points.blue) parts.push(Scoring.call(s, [], L));
+        return parts.join('. ');
+      }
       if (s.sets.length) parts.push(`${t(TEXT.sets)} ${n(s.setsWon.red)} ${n(s.setsWon.blue)}`);
       if (!s.tiebreak) parts.push(`${t(TEXT.games)} ${n(s.games.red)} ${n(s.games.blue)}`);
       const call = Scoring.call(s, [], L);
@@ -408,7 +421,10 @@
       const s = m.state, p = Scoring.display(s);
       const sets = s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`));
       let title, artist;
-      if (s.finished) { // the winner, and every set: "6-4 · 6-7 · 10-8"
+      if (pp) {
+        title = s.finished ? (s.winner === 'draw' ? t(TEXT.draw) : t(TEXT.winner).replace('{t}', teamLabel(s.winner))) : `${p.red} - ${p.blue}`;
+        artist = s.finished ? sets.join(' · ') : `${t(TEXT.games)} ${s.games.red}-${s.games.blue}`;
+      } else if (s.finished) { // the winner, and every set: "6-4 · 6-7 · 10-8"
         title = s.winner === 'draw' ? t(TEXT.draw) : t(TEXT.winner).replace('{t}', teamLabel(s.winner));
         artist = [...sets, ...(s.games.red || s.games.blue ? [`${s.games.red}-${s.games.blue}`] : [])].join(' · ');
       } else {
@@ -416,7 +432,7 @@
         const now = s.tiebreak === 'stb' ? t(TEXT.stb) : `${t(TEXT.games)} ${s.games.red}-${s.games.blue}${s.tiebreak ? ` · ${t(TEXT.tb)}` : ''}`;
         artist = [s.sets.length ? `${t(TEXT.sets)} ${s.setsWon.red}-${s.setsWon.blue}` : '', now].filter(Boolean).join(' · ');
       }
-      try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist, album: 'Padel Score', artwork: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }] }); } catch { /* ignore */ }
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist, album: pp ? 'Ping pong' : 'Padel Score', artwork: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }] }); } catch { /* ignore */ }
     }
 
     // ---------- the "what Bolo heard" log: phrases, what they did, and taps (a tap often means voice missed) ----------
@@ -451,7 +467,7 @@
       paintBolo(team);
       if (w) { w.classList.remove('bounce'); void w.offsetWidth; w.classList.add('bounce'); }
       const tag = events.includes('match') ? null
-        : events.includes('matchPoint') ? TEXT.matchPoint : events.includes('setPoint') ? TEXT.setPoint
+        : events.includes('matchPoint') ? TEXT.matchPoint : events.includes('setPoint') ? TEXT.setPoint : events.includes('gamePoint') ? TEXT.gamePoint
           : events.includes('changeEnds') ? TEXT.change : events.includes('golden') ? TEXT.golden : null;
       flash = tag ? t(tag) : null;
       clearTimeout(flashTimer);
@@ -477,7 +493,17 @@
       const setEnd = events.includes('set'), gameEnd = events.includes('game');
       const title = setEnd || gameEnd ? `${t(setEnd ? TEXT.sumSet : TEXT.sumGame)} ${t(TEXT[team])}` : t(TEXT.change);
       const big = (x) => (setEnd ? s.setsWon[x] : gameEnd ? s.games[x] : s.points[x]);
-      const label = setEnd ? t(TEXT.sets) : gameEnd ? t(TEXT.games) : t(TEXT.tb);
+      const label = setEnd ? t(TEXT.sets) : gameEnd ? t(TEXT.games) : pp ? t(TEXT.points) : t(TEXT.tb);
+      if (pp) { // every game played so far: "11-9 · 7-11"
+        const games = s.sets.map((x) => `${x.red}-${x.blue}`).join(' · ');
+        return `<button class="m-sum" data-act="close-summary" type="button">
+        <span class="s-title c-${team}">${esc(title)}</span>
+        <span class="s-teams">${sides().map((x) => `<span class="s-team c-${x}${x === team ? ' won' : ''}"><small>${esc(teamLabel(x))}</small><b>${big(x)}</b></span>`).join('')}</span>
+        <span class="s-label">${esc(label)}${games ? ` · ${esc(games)}` : ''}</span>
+        ${events.includes('changeEnds') ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
+        <span class="s-serve">🏓 ${esc(t(TEXT.serves).replace('{t}', serverLabel()))}</span>
+      </button>`;
+      }
       const done = s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`)).join(' · ');
       const now = s.tiebreak ? t(s.tiebreak === 'stb' ? TEXT.stb : TEXT.tb) : '';
       return `<button class="m-sum" data-act="close-summary" type="button">
@@ -579,7 +605,7 @@
       const pts = Scoring.display(s)[team];
       return `<button class="half h-${team}${serving ? ' serving' : ''}" data-team="${team}" type="button" aria-label="${esc(teamLabel(team))}">
         <span class="h-name">${esc(teamLabel(team))}</span>
-        <span class="h-serve${serving ? '' : ' off'}">🎾 ${esc(serving ? svName || t(TEXT.server) : t(TEXT.server))}</span>
+        <span class="h-serve${serving ? '' : ' off'}">${BALL} ${esc(serving ? svName || t(TEXT.server) : t(TEXT.server))}</span>
         <span class="h-points${pts === 'AD' ? ' adv' : ''}">${esc(pts)}</span>
         <span class="h-games"><small>${esc(t(TEXT.games))}</small> <b>${s.tiebreak === 'stb' ? '–' : s.games[team]}</b></span>
       </button>`;
@@ -596,7 +622,7 @@
       if (flash) return flash;
       const st = Scoring.stakes(s);
       if (st.red === 'match' || st.blue === 'match') return t(TEXT.matchPoint);
-      if (st.red || st.blue) return t(TEXT.setPoint);
+      if (st.red || st.blue) return t(pp ? TEXT.gamePoint : TEXT.setPoint);
       if (s.lastGame) return t(TEXT.lastGame);
       if (s.tiebreak) return t(s.tiebreak === 'stb' ? TEXT.stb : TEXT.tb);
       if (Scoring.isGolden(s)) return t(TEXT.golden);
@@ -612,7 +638,7 @@
         <h2>${esc(title)}</h2>
         ${s.endedBy === 'time' ? `<p>${esc(t(TEXT.byTime))}</p>` : ''}
         ${s.endedBy === 'time' ? `<p class="playon">${esc(t(TEXT.playOn))}</p><div class="row"><button class="btn" data-act="more-time" data-min="30" type="button">⏳ ${esc(t(TEXT.moreTime))}</button><button class="btn" data-act="more-time" data-min="0" type="button">∞ ${esc(t(TEXT.noLimit))}</button></div>` : ''}
-        <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
+        <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (pp ? s.points.red || s.points.blue : s.games.red || s.games.blue) ? [pp ? `${s.points.red}-${s.points.blue}` : `${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
         ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="undo" type="button">${icon('undo')} ${esc(t(TEXT.undoLast))}</button>
         <button class="btn go" data-act="save" type="button">${esc(t(TEXT.save))}</button></div>
@@ -629,7 +655,7 @@
       const servers = s.order.map((p) => {
         const label = names(p.team)[p.player] || (s.config.mode === 'singles' ? t(TEXT[p.team]) : `${t(TEXT[p.team])} ${p.player + 1}`);
         const on = p.team === sv.team && p.player === sv.player;
-        return `<button class="chip c-${p.team}${on ? ' on' : ''}" data-server="${p.team}" data-player="${p.player}" type="button">🎾 ${esc(label)}</button>`;
+        return `<button class="chip c-${p.team}${on ? ' on' : ''}" data-server="${p.team}" data-player="${p.player}" type="button">${BALL} ${esc(label)}</button>`;
       }).join('');
       return `<div class="m-edit" role="dialog"><div class="e-box">
         <div class="e-teams">${rows}</div>
@@ -681,7 +707,7 @@
         ${showHeard ? `<div class="m-heard">${heardHtml(m, t, esc)}</div>` : ''}
         ${editing && !s.finished ? editPanel() : ''}
         ${m.pausedAt && !s.finished ? `<button class="m-overlay" data-act="resume" type="button"><b>⏸ ${esc(t(TEXT.paused))}</b><span>${esc(t(TEXT.tapResume))}</span></button>` : ''}
-        ${!unlocked ? `<button class="m-overlay" data-act="unlock" type="button"><b>🎾</b><span>${esc(t(m.stack.length ? TEXT.tapContinue : TEXT.tapStart))}</span></button>` : ''}`;
+        ${!unlocked ? `<button class="m-overlay" data-act="unlock" type="button"><b>${BALL}</b><span>${esc(t(m.stack.length ? TEXT.tapContinue : TEXT.tapStart))}</span></button>` : ''}`;
       paintBolo();
     }
 
@@ -775,5 +801,5 @@
     return { close, rerender: () => { listener?.setLang(getLang()); render(); } };
   }
 
-  window.Match = { open, unlock, TEXT, heardHtml, copyHeard };
+  window.Match = { open, unlock, engine, TEXT, heardHtml, copyHeard };
 })();

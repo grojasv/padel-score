@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.6.2'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.7.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -10,6 +10,7 @@
     continue: { es: 'Continuar partido', ca: 'Continua el partit', en: 'Continue match' },
     history: { es: 'Historial', ca: 'Historial', en: 'History' },
     noHistory: { es: 'Aún no hay partidos. ¡La pista te espera!', ca: 'Encara no hi ha partits. La pista t’espera!', en: 'No matches yet. The court is waiting!' },
+    noHistoryPP: { es: 'Aún no hay partidos. ¡La mesa te espera!', ca: 'Encara no hi ha partits. La taula t’espera!', en: 'No matches yet. The table is waiting!' },
     setup: { es: 'Preparar partido', ca: 'Prepara el partit', en: 'Match setup' },
     mode: { es: 'Modalidad', ca: 'Modalitat', en: 'Format' },
     doubles: { es: 'Dobles', ca: 'Dobles', en: 'Doubles' },
@@ -34,6 +35,7 @@
     timeHelp: { es: 'Bolo avisa a los 5 y a 1 minuto. Al acabar el tiempo se juega el último juego. Si os quedáis más, al final puedes sumar 30 minutos o quitar el límite.', ca: 'En Bolo avisa als 5 i a 1 minut. En acabar el temps es juga l’últim joc. Si us quedeu més, al final pots sumar 30 minuts o treure el límit.', en: 'Bolo warns at 5 and 1 minute. When time is up, the current game is the last. If you stay on, the end screen can add 30 minutes or remove the limit.' },
     sidesLegend: { es: 'Lados', ca: 'Costats', en: 'Sides' },
     sides: { es: 'Rojo y azul cambian de lado en cada cambio de campo', ca: 'Vermell i blau canvien de costat a cada canvi de camp', en: 'Red and blue swap sides at every change of ends' },
+    sidesHelpPP: { es: 'Como en la mesa: tras cada juego y a los 5 puntos del último juego. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ azul.', ca: 'Com a la taula: després de cada joc i als 5 punts de l’últim joc. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ blau.', en: 'As at the table: after each game and at 5 points in the last game. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ blue.' },
     sidesHelp: { es: 'Como en la pista: tras los juegos 1, 3, 5…, cada 6 puntos del tie-break y tras un set impar. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ azul.', ca: 'Com a la pista: després dels jocs 1, 3, 5…, cada 6 punts del tie-break i després d’un set senar. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ blau.', en: 'As on court: after games 1, 3, 5…, every 6 tie-break points and after an odd set. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ blue.' },
     serve: { es: 'Saque inicial', ca: 'Servei inicial', en: 'First serve' },
     draw: { es: 'Sortear', ca: 'Sorteja', en: 'Random' },
@@ -75,6 +77,14 @@
     drawn: { es: 'Empate', ca: 'Empat', en: 'Draw' },
     install: { es: 'Instala la app', ca: 'Instal·la l’app', en: 'Install the app' },
     installOther: { es: 'Abre el menú del navegador (⋮) y elige «Instalar aplicación».', ca: 'Obre el menú del navegador (⋮) i tria «Instal·la l’aplicació».', en: 'Open the browser menu (⋮) and choose “Install app”.' },
+    padel: { es: 'Pádel', ca: 'Pàdel', en: 'Padel' },
+    pingpong: { es: 'Ping pong', ca: 'Ping-pong', en: 'Ping pong' },
+    sport: { es: 'Deporte', ca: 'Esport', en: 'Sport' },
+    bestOf: { es: 'Partido', ca: 'Partit', en: 'Match' },
+    bo1: { es: 'A 1 juego', ca: 'A 1 joc', en: '1 game' },
+    bo3: { es: 'Al mejor de 3', ca: 'Al millor de 3', en: 'Best of 3' },
+    bo5: { es: 'Al mejor de 5', ca: 'Al millor de 5', en: 'Best of 5' },
+    ppFormat: { es: 'Juegos a 11, con 2 de diferencia. El saque cambia cada 2 puntos, y cada punto desde 10-10. Se cambia de lado tras cada juego y a los 5 puntos del último.', ca: 'Jocs a 11, amb 2 de diferència. El servei canvia cada 2 punts, i cada punt des del 10-10. Es canvia de costat després de cada joc i als 5 punts de l’últim.', en: 'Games to 11, win by 2. Serve changes every 2 points, and every point from 10-10. Ends change after each game and at 5 points in the last one.' },
     hello: { es: '¡Hola! Soy Bolo. ¿Echamos un partido?', ca: 'Hola! Soc en Bolo. Fem un partit?', en: 'Hi! I’m Bolo. Fancy a match?' },
     loadError: { es: 'No se han podido cargar los datos.', ca: 'No s’han pogut carregar les dades.', en: 'Couldn’t load the data.' },
   };
@@ -82,7 +92,18 @@
   const DEFAULT_SETUP = {
     mode: 'doubles', names: { red: ['', ''], blue: ['', ''] }, deuce: 'golden', superTiebreak: true,
     timeLimit: 0, firstServe: 'red', firstPlayer: { red: 0, blue: 0 }, muted: false, voiceInput: true, strict: false,
+    sport: 'padel', ppMode: 'singles', ppBestOf: 3, // ping pong keeps its own format, so switching sport loses nothing
   };
+  const SPORT_ICON = { padel: '🎾', pingpong: '🏓' };
+  const isPP = (s) => s?.sport === 'pingpong';
+  const modeOf = (s) => (isPP(s) ? s.ppMode : s.mode); // singles or doubles, for the sport in use
+  // The sport colours the app (accent, Bolo's ball). A match uses its own sport while it is open.
+  function applySport(sport) {
+    document.documentElement.dataset.sport = sport === 'pingpong' ? 'pingpong' : 'padel';
+    Bolo.sport = sport === 'pingpong' ? 'pingpong' : 'padel';
+    const brand = document.querySelector('.brand span');
+    if (brand) brand.innerHTML = `${sport === 'pingpong' ? 'Ping pong' : 'Padel'} <b>Score</b>`;
+  }
   const TIMES = [0, 45, 60, 75, 90, 120];
 
   const store = {
@@ -129,17 +150,22 @@
   // ---------- views ----------
   function renderHub() {
     const log = readLog().slice(0, 20);
-    const pool = lines.hello?.[lang];
+    const setupNow = loadSetup();
+    applySport(setupNow.sport);
+    const pool = lines[isPP(setupNow) ? 'ppHello' : 'hello']?.[lang];
     const hello = pool?.length ? pool[Math.floor(Math.random() * pool.length)] : t(TEXT.hello);
     const cur = current();
     view.innerHTML = `
+      <div class="sport" role="radiogroup" aria-label="${esc(t(TEXT.sport))}">
+        ${['padel', 'pingpong'].map((sp) => `<button type="button" role="radio" data-sport="${sp}" aria-checked="${setupNow.sport === sp}" class="${setupNow.sport === sp ? 'on' : ''}"><span>${SPORT_ICON[sp]}</span>${esc(t(TEXT[sp]))}</button>`).join('')}
+      </div>
       <section class="hero">
         <div class="bolo-wrap idle" id="heroBolo">${Bolo.svg('happy')}</div>
         <div class="bubble">${esc(hello)}</div>
       </section>
       <div class="actions">
         ${cur ? `<button class="btn go big" id="continueBtn" type="button">▶ ${esc(t(TEXT.continue))}<small>${esc(teamName(cur.setup, 'red'))} – ${esc(teamName(cur.setup, 'blue'))}</small></button>` : ''}
-        <a class="btn ${cur ? 'ghost' : 'go big'}" href="#/setup">🎾 ${esc(t(TEXT.newMatch))}</a>
+        <a class="btn ${cur ? 'ghost' : 'go big'}" href="#/setup">${SPORT_ICON[setupNow.sport]} ${esc(t(TEXT.newMatch))}</a>
         <a class="btn ghost small" href="#/settings">⚙️ ${esc(t(TEXT.settings))}</a>
       </div>
       <h2 class="sec">${esc(t(TEXT.history))}</h2>
@@ -148,10 +174,14 @@
           .concat(e.endedBy !== 'score' && e.games && (e.games.red || e.games.blue) ? [`${e.games.red}-${e.games.blue}`] : []).join(' ');
         const w = e.winner === 'draw' ? `<span class="tag">${esc(t(TEXT.drawn))}</span>` : `<span class="tag c-${e.winner}">${esc(teamName(e.setup, e.winner))} ${esc(t(TEXT.won))}</span>`;
         return `<li><span class="h-date">${esc(dateFmt(e.at))} · ${e.minutes} min</span>
-          <span class="h-teams"><b class="t-red">${esc(teamName(e.setup, 'red'))}</b> – <b class="t-blue">${esc(teamName(e.setup, 'blue'))}</b></span>
+          <span class="h-teams">${isPP(e.setup) ? '🏓' : '🎾'} <b class="t-red">${esc(teamName(e.setup, 'red'))}</b> – <b class="t-blue">${esc(teamName(e.setup, 'blue'))}</b></span>
           <span class="h-score">${sets || '–'}</span>${w}
           ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
-      }).join('')}</ul>` : `<p class="empty">${esc(t(TEXT.noHistory))}</p>`}`;
+      }).join('')}</ul>` : `<p class="empty">${esc(t(isPP(setupNow) ? TEXT.noHistoryPP : TEXT.noHistory))}</p>`}`;
+    view.querySelectorAll('[data-sport]').forEach((b) => b.addEventListener('click', () => {
+      store.set(KEY.setup, JSON.stringify({ ...loadSetup(), sport: b.dataset.sport }));
+      renderHub();
+    }));
     $('heroBolo').addEventListener('click', (e) => { const m = e.currentTarget; m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce'); });
     $('continueBtn')?.addEventListener('click', () => { Match.unlock({ mic: !!cur.setup.voiceInput, remote: !!cur.setup.remote }); location.hash = '#/match'; });
     view.querySelectorAll('[data-heard]').forEach((b) => b.addEventListener('click', () => {
@@ -174,6 +204,7 @@
   // The match screen: only what changes from match to match (names, who serves). The rules live in Ajustes.
   function renderSetup() {
     const s = loadSetup();
+    applySport(s.sport);
     const voiceOk = !!window.Voice?.supported();
     const nameInputs = (team) => [0, 1].map((i) => `<input class="name n-${team}${i ? ' p2' : ''}" name="${team}${i}" maxlength="18" autocomplete="off"
       placeholder="${esc(t(TEXT.player))} ${i + 1}" value="${esc(s.names[team][i] || '')}">`).join('');
@@ -182,7 +213,8 @@
       ${seg(`fp-${team}`, s.firstPlayer[team], [[0, `<span class="fp-name" data-fp="${team}0">${esc(s.names[team][0] || `${t(TEXT.player)} 1`)}</span>`], [1, `<span class="fp-name" data-fp="${team}1">${esc(s.names[team][1] || `${t(TEXT.player)} 2`)}</span>`]])}</div>`;
     view.innerHTML = `
       <a class="back" href="#/">${esc(t(TEXT.back))}</a>
-      <form class="card setup" id="setupForm" data-mode="${s.mode}">
+      <form class="card setup" id="setupForm" data-mode="${modeOf(s)}">
+        <h2>${SPORT_ICON[s.sport]} ${esc(t(TEXT[s.sport]))}</h2>
         <fieldset><legend>${esc(t(TEXT.teams))} <small class="muted">· ${esc(t(TEXT.namesOpt))}</small></legend>
           <div class="teams">
             <div class="team c-red"><h3>${esc(t(TEXT.red))}</h3>${nameInputs('red')}</div>
@@ -192,7 +224,7 @@
           ${seg('serve', s.firstServe, [['red', `🔴 ${esc(t(TEXT.red))}`], ['blue', `🔵 ${esc(t(TEXT.blue))}`], ['random', `🎲 ${esc(t(TEXT.draw))}`]])}
           ${firstOf('red')}${firstOf('blue')}</fieldset>
         <a class="rules" href="#/settings"><span>${esc(rulesSummary(s, voiceOk))}</span><b>⚙️ ${esc(t(TEXT.change))}</b></a>
-        <button class="btn go big" type="submit">🎾 ${esc(t(TEXT.start))}</button>
+        <button class="btn go big" type="submit">${SPORT_ICON[s.sport]} ${esc(t(TEXT.start))}</button>
       </form>`;
     const form = $('setupForm');
     form.addEventListener('input', (e) => {
@@ -215,9 +247,10 @@
       };
       store.set(KEY.setup, JSON.stringify(setup)); // names and serve are remembered for next time too
       const played = { ...setup, firstServe: serve === 'random' ? (Math.random() < 0.5 ? 'red' : 'blue') : serve };
+      if (isPP(played)) Object.assign(played, { mode: played.ppMode, bestOf: played.ppBestOf, timeLimit: 0 });
       if (!voiceOk) played.voiceInput = false;
       if (played.mode === 'singles') played.names = { red: [played.names.red[0], ''], blue: [played.names.blue[0], ''] };
-      const m = { setup: played, state: Scoring.init(played), stack: [], startedAt: Date.now(), pausedMs: 0, pausedAt: null, warned: [] };
+      const m = { setup: played, state: Match.engine(played).init(played), stack: [], startedAt: Date.now(), pausedMs: 0, pausedAt: null, warned: [] };
       store.set(KEY.current, JSON.stringify(m));
       location.hash = '#/match';
     });
@@ -225,6 +258,8 @@
 
   // One line under the match screen: the rules in use, with a link to Ajustes.
   function rulesSummary(s, voiceOk) {
+    const icons = `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}${s.remote ? ' ⌚' : ''}${s.swapSides ? ' ↔' : ''}`;
+    if (isPP(s)) return [t(s.ppMode === 'doubles' ? TEXT.doubles : TEXT.singles), t(TEXT[`bo${s.ppBestOf}`]), icons].join(' · ');
     const deuce = { golden: TEXT.golden, advantage: TEXT.advantage, star: TEXT.star }[s.deuce];
     return [t(s.mode === 'singles' ? TEXT.singles : TEXT.doubles), t(deuce), t(s.superTiebreak ? TEXT.stbShort : TEXT.fullSet),
       s.timeLimit ? `⏳ ${s.timeLimit} ${t(TEXT.min)}` : t(TEXT.noLimit),
@@ -234,12 +269,18 @@
   // Ajustes: the default rules and voice options. Every change is saved at once and used by the next match.
   function renderSettings() {
     const s = loadSetup();
+    applySport(s.sport);
+    const pp = isPP(s);
     const voiceOk = !!window.Voice?.supported();
     view.innerHTML = `
       <a class="back" href="#/">${esc(t(TEXT.back))}</a>
       <form class="card setup" id="settingsForm">
-        <h2>⚙️ ${esc(t(TEXT.settings))}</h2>
+        <h2>⚙️ ${esc(t(TEXT.settings))} · ${SPORT_ICON[s.sport]} ${esc(t(TEXT[s.sport]))}</h2>
         <p class="help">${esc(t(TEXT.settingsHelp))}</p>
+        ${pp ? `<fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.ppMode, [['singles', `👤 ${esc(t(TEXT.singles))}`], ['doubles', `👥 ${esc(t(TEXT.doubles))}`]])}</fieldset>
+        <fieldset><legend>${esc(t(TEXT.bestOf))}</legend>
+          ${seg('bestOf', s.ppBestOf, [[1, esc(t(TEXT.bo1))], [3, esc(t(TEXT.bo3))], [5, esc(t(TEXT.bo5))]])}
+          <p class="help">${esc(t(TEXT.ppFormat))}</p></fieldset>` : `
         <fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.mode, [['doubles', `👥 ${esc(t(TEXT.doubles))}`], ['singles', `👤 ${esc(t(TEXT.singles))}`]])}</fieldset>
         <fieldset><legend>${esc(t(TEXT.deuce))}</legend>
           ${seg('deuce', s.deuce, [['golden', esc(t(TEXT.golden))], ['advantage', esc(t(TEXT.advantage))], ['star', esc(t(TEXT.star))]])}
@@ -249,10 +290,10 @@
           <p class="help">${esc(t(TEXT.format))}</p></fieldset>
         <fieldset><legend>${esc(t(TEXT.time))}</legend>
           ${seg('time', s.timeLimit, TIMES.map((m) => [m, m ? `${m} ${esc(t(TEXT.min))}` : esc(t(TEXT.noLimit))]))}
-          <p class="help">${esc(t(TEXT.timeHelp))}</p></fieldset>
+          <p class="help">${esc(t(TEXT.timeHelp))}</p></fieldset>`}
         <fieldset><legend>${esc(t(TEXT.sidesLegend))}</legend>
           <label class="check"><input type="checkbox" name="swapSides"${s.swapSides ? ' checked' : ''}> ↔ ${esc(t(TEXT.sides))}</label>
-          <p class="help">${esc(t(TEXT.sidesHelp))}</p></fieldset>
+          <p class="help">${esc(t(pp ? TEXT.sidesHelpPP : TEXT.sidesHelp))}</p></fieldset>
         <fieldset><legend>${esc(t(TEXT.voice))}</legend>
           <label class="check"><input type="checkbox" name="talk"${s.muted ? '' : ' checked'}> ${esc(t(TEXT.talk))}</label>
           ${voiceOk ? `<label class="check"><input type="checkbox" name="listen"${s.voiceInput ? ' checked' : ''}> ${esc(t(TEXT.listen))}</label>
@@ -271,8 +312,9 @@
     const form = $('settingsForm');
     form.addEventListener('change', () => {
       const f = new FormData(form);
-      const next = { ...loadSetup(), mode: f.get('mode'), deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1',
-        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict'), remote: !!f.get('remote'), swapSides: !!f.get('swapSides') };
+      const shared = { muted: !f.get('talk'), strict: !!f.get('strict'), remote: !!f.get('remote'), swapSides: !!f.get('swapSides') };
+      const next = pp ? { ...loadSetup(), ...shared, ppMode: f.get('mode'), ppBestOf: Number(f.get('bestOf')) || 3 }
+        : { ...loadSetup(), ...shared, mode: f.get('mode'), deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1', timeLimit: Number(f.get('time')) || 0 };
       if (voiceOk) next.voiceInput = !!f.get('listen');
       store.set(KEY.setup, JSON.stringify(next));
       $('savedNote').textContent = `✓ ${t(TEXT.saved)}`;
@@ -331,6 +373,7 @@
   function openMatch() {
     const m = readJSON(KEY.current, null);
     if (!m?.state) { location.hash = '#/'; return; }
+    applySport(m.setup?.sport);
     document.body.classList.add('playing');
     matchEl.hidden = false;
     match = Match.open(matchEl, {

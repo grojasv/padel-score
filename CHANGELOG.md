@@ -2,6 +2,14 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.7.0] - 2026-11-10
+### Added
+- **Ping pong.** A big Pádel | Ping pong switch at the top of the home screen. The choice is remembered and changes the whole app: orange accent, an orange Bolo with no seam, the title, Ajustes, the new-match screen and the 🏓 icons.
+- Ping pong rules (`pingpong.js`, 9 tests): games to 11, win by 2; best of 1, 3 or 5 (default 3); serve changes every 2 points and every point from 10-10; the first receiver serves the next game; ends change after each game and at 5 in the deciding game; singles and doubles with the official rotation (A1→B1→A2→B2, receivers swap at 5 in the deciding game).
+- Ping pong calls ("cinco tres", "diez iguales", "Bola de juego", "Juego rojo. Uno cero") and Bolo's own lines for the table. The summary screen lists every game played ("11-9 · 11-13"). History entries show 🎾 or 🏓.
+### Tested
+- In the browser at 844×390: a ping pong singles match (11-9, 11-13, 11-4, 74 taps), every point checked against an independent rules model (points, games, server, sides); a ping pong doubles game (serve order and the receiver swap at 5); and a full padel match (6-4, 6-7, 10-8, 121 taps) checked against scoring.js. No mismatches.
+
 ## [0.6.2] - 2026-11-10
 ### Changed
 - Match buttons use clean line icons (drawn as inline SVG) instead of emoji: undo, ••• menu, fix, sound on/off, pause, exit and the mic.

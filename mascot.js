@@ -21,6 +21,8 @@
     tongue: '#f07a8a',
     cheek: '#ff8a65',
   };
+  // Ping pong Bolo: an orange ball with no seam, and a glossy highlight instead.
+  const PP = { ball: '#ff8a1f', ballHi: '#ffc27a', ballLo: '#d9590a' };
   const MOODS = ['idle', 'happy', 'fierce', 'sad', 'cheer'];
   const pts = (p) => p.map(([x, y]) => `${x},${y}`).join(' ');
 
@@ -88,20 +90,23 @@
   function svg(mood = 'idle', opts = {}) {
     if (!MOODS.includes(mood)) mood = 'idle';
     const gold = !!opts.gold;
+    const pp = (opts.sport || api.sport) === 'pingpong';
+    const B = pp ? PP : C;
     const gid = `boloBall${++uid}`;
     return `<svg class="bolo mood-${mood}" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bolo">
   <defs>
     <radialGradient id="${gid}" cx="38%" cy="32%" r="75%">
-      <stop offset="0" stop-color="${C.ballHi}"/><stop offset="0.55" stop-color="${C.ball}"/><stop offset="1" stop-color="${C.ballLo}"/>
+      <stop offset="0" stop-color="${B.ballHi}"/><stop offset="0.55" stop-color="${B.ball}"/><stop offset="1" stop-color="${B.ballLo}"/>
     </radialGradient>
   </defs>
   <ellipse class="bolo-shadow" cx="100" cy="212" rx="46" ry="7" fill="#000" opacity="0.18"/>
   <g class="bolo-body">
     ${hair(gold)}
     <circle cx="100" cy="140" r="66" fill="url(#${gid})" stroke="${C.ink}" stroke-width="3"/>
-    <circle cx="100" cy="140" r="62" fill="none" stroke="${C.ballHi}" stroke-width="3" stroke-dasharray="1.5 4" opacity="0.8"/>
+    ${pp ? `<ellipse cx="66" cy="104" rx="16" ry="9" fill="#fff" opacity="0.55" transform="rotate(-35 66 104)"/>`
+    : `<circle cx="100" cy="140" r="62" fill="none" stroke="${C.ballHi}" stroke-width="3" stroke-dasharray="1.5 4" opacity="0.8"/>
     <path d="M48 100 Q76 140 48 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>
-    <path d="M152 100 Q124 140 152 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>
+    <path d="M152 100 Q124 140 152 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>`}
     ${bangs(gold)}
     ${brows(mood)}
     ${eyes(mood)}
@@ -114,7 +119,7 @@
   // Just the head for icons: same drawing, a squarer crop.
   const head = (mood = 'happy', opts = {}) => svg(mood, opts).replace('viewBox="0 0 200 220"', 'viewBox="6 4 188 206"');
 
-  const api = { svg, head, MOODS, C };
+  const api = { svg, head, MOODS, C, sport: 'padel' }; // sport: the default ball, set by the app
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Bolo = api;
 })(typeof self !== 'undefined' ? self : this);

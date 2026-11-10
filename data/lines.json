@@ -58,5 +58,20 @@
     "es": ["¡Seguimos!"],
     "ca": ["Seguim!"],
     "en": ["We’re back!"]
+  },
+  "ppHello": {
+    "es": ["¡Hola! Soy Bolo. ¿Echamos un ping pong?", "¡Mesa lista! ¿Quién se atreve?", "Yo llevo el marcador, vosotros a sudar.", "Hoy huele a remontada."],
+    "ca": ["Hola! Soc en Bolo. Fem un ping-pong?", "Taula a punt! Qui s’hi atreveix?", "Jo porto el marcador, vosaltres a suar.", "Avui fa olor de remuntada."],
+    "en": ["Hi! I’m Bolo. Fancy some ping pong?", "Table’s ready! Who dares?", "I keep the score, you do the sweating.", "Smells like a comeback today."]
+  },
+  "ppGame": {
+    "es": ["¡Vaya juego!", "¡Eso es ping pong!", "Bien jugado.", "¡Qué efecto!", "Seguimos, seguimos."],
+    "ca": ["Quin joc!", "Això és ping-pong!", "Ben jugat.", "Quin efecte!", "Seguim, seguim."],
+    "en": ["What a game!", "That’s ping pong!", "Well played.", "What spin!", "On we go."]
+  },
+  "ppFinish": {
+    "es": ["¡Enhorabuena, campeones!", "Partidazo. Choca esas palas.", "¡Qué nivel! Hasta la próxima."],
+    "ca": ["Enhorabona, campions!", "Partidàs. Xoqueu aquestes pales.", "Quin nivell! Fins a la propera."],
+    "en": ["Congratulations, champions!", "Great match. Tap those bats.", "What a level! See you next time."]
   }
 }

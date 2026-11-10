@@ -78,6 +78,14 @@ Everything below is remembered between matches.
 - **Undo:** the state is immutable. Each point pushes the previous state onto a stack, undo pops it, and there is no limit.
 - **Edit panel:** sets the points, games and server directly, and can end the match now. It refuses a change that would end a set. Each change goes onto the undo stack. Sets are not edited: undo covers a wrong set.
 
+## Ping pong (`pingpong.js`, covered by `test-pingpong.mjs`)
+- **Sport switch** at the top of the hub (`setup.sport`: 'padel' | 'pingpong'), remembered. It sets `data-sport` on `<html>` (orange tokens), `Bolo.sport` (orange ball, no seam) and the title. A match uses its own sport while open.
+- **Settings** of their own: `ppMode` (singles default, doubles) and `ppBestOf` (1, 3 default, 5), so switching sport loses nothing. No time limit, golden point or third set.
+- **Rules:** games to 11, win by 2. Best of 1, 3 or 5. Serve changes every 2 points, every point from 10-10. The first receiver of a game serves first in the next, to the player who served first. Ends change after every game except the last, and when a side first reaches 5 in the deciding game; in doubles the receivers swap then.
+- **Doubles rotation:** A1→B1, B1→A2, A2→B2, B2→A1 (the receiver serves next, to the partner of the last server). In setup, "1.º en …" is the first server for the serving side and the first receiver for the other.
+- **State** reuses padel's field names where the screen reads them: `points` (this game), `games` (games won, the big box), `sets` (finished games with their score, the centre strip), plus `srv`/`rcv`.
+- **Calls:** server's score first ("cinco tres", "diez iguales"), "Bola de juego" / "Bola de partido", "Juego rojo. Uno cero", "Cambio de campo". Bolo's lines: `ppHello`, `ppGame`, `ppFinish` replace `hello`, `game`, `finish`.
+
 ## Scoreboard screen (landscape)
 - Two halves: **left red, right blue.** Each half shows a huge point score (15/30/40/AD, or tie-break digits), the games in the current set and the set scores, plus a 🎾 marker on the server (and the server's name if set).
 - A narrow centre strip shows the clock (elapsed time, or remaining time if a limit is on), a mic status dot, the sets, a small Bolo (he reacts to every point), a big gold **Deshacer** and a ••• menu with Corregir, Bolo's voice, Pausa and Salir. A tap on a half while the menu is open only closes it.
