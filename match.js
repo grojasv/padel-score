@@ -51,6 +51,11 @@
     micIsOn: { es: 'Micro encendido: toca para apagarlo', ca: 'Micro encès: toca per apagar-lo', en: 'Mic on: tap to turn it off' },
     micBlocked: { es: 'Micrófono bloqueado: toca aquí para permitirlo', ca: 'Micròfon bloquejat: toca aquí per permetre’l', en: 'Microphone blocked: tap here to allow it' },
     micHow: { es: 'Si no sale la pregunta: en Chrome, toca el candado junto a la dirección → Permisos → Micrófono → Permitir. Si la app está instalada: Ajustes de Android → Apps → Chrome → Permisos → Micrófono.', ca: 'Si no surt la pregunta: a Chrome, toca el cadenat al costat de l’adreça → Permisos → Micròfon → Permet. Si l’app està instal·lada: Configuració d’Android → Aplicacions → Chrome → Permisos → Micròfon.', en: 'If no prompt appears: in Chrome, tap the lock next to the address → Permissions → Microphone → Allow. If the app is installed: Android Settings → Apps → Chrome → Permissions → Microphone.' },
+    sumGame: { es: 'Juego', ca: 'Joc', en: 'Game' },
+    sumSet: { es: 'Set', ca: 'Set', en: 'Set' },
+    playOn: { es: '¿Seguís jugando?', ca: 'Continueu jugant?', en: 'Playing on?' },
+    moreTime: { es: '+30 min', ca: '+30 min', en: '+30 min' },
+    noLimit: { es: 'Sin límite', ca: 'Sense límit', en: 'No limit' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
@@ -69,6 +74,8 @@
     o.start(t0); o.stop(t0 + ms / 1000 + 0.02);
   }
   const confirmSound = (team) => (team === 'red' ? (tone(660, 90), tone(880, 120, 90)) : (tone(587, 90), tone(784, 120, 90)));
+  // A point heard by voice: louder and three notes, so it can be heard from the far end of the court.
+  const heardSound = (team) => { const f = team === 'red' ? [660, 880, 1100] : [587, 784, 988]; f.forEach((x, i) => tone(x, 110, i * 100, 0.6)); };
   const undoSound = () => { tone(700, 90); tone(440, 140, 90); };
 
   // ---------- speech ----------
@@ -271,16 +278,18 @@
     }
 
     // ---------- scoring actions ----------
-    function addPoint(team) {
+    function addPoint(team, how) {
       if (m.state.finished || m.pausedAt) return;
+      hideSummary();
       m.stack.push(m.state);
       if (m.stack.length > 600) m.stack.shift();
       const r = Scoring.point(m.state, team);
       m.state = r.state;
       markFinished();
       save();
-      confirmSound(team);
+      if (how === 'voice') heardSound(team); else confirmSound(team);
       react(team, r.events);
+      if (!r.events.includes('match') && ['game', 'set', 'changeEnds'].some((e) => r.events.includes(e))) showSummary(r.events, team);
       render();
       let text = Scoring.call(m.state, r.events, getLang(), team);
       if (r.events.includes('match')) {
@@ -291,6 +300,7 @@
     }
     function undo() {
       if (!m.stack.length) return;
+      hideSummary();
       m.state = m.stack.pop();
       markFinished();
       save();
@@ -314,7 +324,7 @@
     function command(cmd) {
       if (quiet()) return 'quiet'; // Bolo's own call ("Juego rojo") must never score
       if (m.state.finished && cmd.cmd !== 'undo') return 'finished';
-      if (cmd.cmd === 'point') addPoint(cmd.team);
+      if (cmd.cmd === 'point') addPoint(cmd.team, 'voice');
       else if (cmd.cmd === 'undo') { if (!m.stack.length) return 'none'; undo(); }
       else if (cmd.cmd === 'score') speak(fullScore());
       else if (cmd.cmd === 'pause' && !m.pausedAt) pause();
@@ -433,6 +443,52 @@
       if (flash) flashTimer = setTimeout(() => { flash = null; render(); }, 4000);
     }
 
+    // ---------- the big summary between games: readable from the far end of the court ----------
+    let summary = null, summaryTimer = null;
+    const SUMMARY_MS = 6000;
+    function showSummary(events, team) {
+      summary = { events, team };
+      clearTimeout(summaryTimer);
+      summaryTimer = setTimeout(hideSummary, SUMMARY_MS);
+    }
+    function hideSummary() {
+      clearTimeout(summaryTimer);
+      if (!summary) return;
+      summary = null;
+      if (!closed) render();
+    }
+    function summaryPanel() {
+      const s = m.state, { events, team } = summary;
+      const setEnd = events.includes('set'), gameEnd = events.includes('game');
+      const title = setEnd || gameEnd ? `${t(setEnd ? TEXT.sumSet : TEXT.sumGame)} ${t(TEXT[team])}` : t(TEXT.change);
+      const big = (x) => (setEnd ? s.setsWon[x] : gameEnd ? s.games[x] : s.points[x]);
+      const label = setEnd ? t(TEXT.sets) : gameEnd ? t(TEXT.games) : t(TEXT.tb);
+      const done = s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}`)).join(' · ');
+      const now = s.tiebreak ? t(s.tiebreak === 'stb' ? TEXT.stb : TEXT.tb) : '';
+      return `<button class="m-sum" data-act="close-summary" type="button">
+        <span class="s-title c-${team}">${esc(title)}</span>
+        <span class="s-teams">${sides().map((x) => `<span class="s-team c-${x}${x === team ? ' won' : ''}"><small>${esc(teamLabel(x))}</small><b>${big(x)}</b></span>`).join('')}</span>
+        <span class="s-label">${esc(label)}${done && !setEnd ? ` · ${esc(t(TEXT.sets))} ${esc(done)}` : setEnd ? ` · ${esc(done)}` : ''}${now ? ` · ${esc(now)}` : ''}</span>
+        ${events.includes('changeEnds') ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
+        <span class="s-serve">🎾 ${esc(t(TEXT.serves).replace('{t}', serverLabel()))}</span>
+      </button>`;
+    }
+    // Left to right on the screen. With "swap sides" on, the teams change sides with the players at each change of ends.
+    const sides = () => (m.setup.swapSides && m.state.swapped ? ['blue', 'red'] : ['red', 'blue']);
+
+    // Time ran out but the players stay on court: open the match again with 30 more minutes, or no limit.
+    function playOn(min) {
+      if (!m.state.finished || m.state.endedBy !== 'time') return;
+      m.stack.push(m.state);
+      m.state = Scoring.reopen(m.state);
+      if (m.finishedAt) m.pausedMs += Date.now() - m.finishedAt; // the time on the end screen is not play time
+      markFinished();
+      m.setup.timeLimit = min ? Math.ceil(elapsed() / 60000) + min : 0;
+      m.warned = [];
+      save(); render();
+      speak(`${line('resumed')} ${fullScore()}`);
+    }
+
     // ---------- pause / exit ----------
     function pause() {
       if (m.pausedAt) return;
@@ -506,9 +562,9 @@
       const serving = !s.finished && sv.team === team;
       const svName = names(team)[sv.player];
       const pts = Scoring.display(s)[team];
-      return `<button class="half h-${team}" data-team="${team}" type="button" aria-label="${esc(teamLabel(team))}">
+      return `<button class="half h-${team}${serving ? ' serving' : ''}" data-team="${team}" type="button" aria-label="${esc(teamLabel(team))}">
         <span class="h-name">${esc(teamLabel(team))}</span>
-        <span class="h-serve">${serving ? `🎾 ${esc(svName || t(TEXT.server))}` : '&nbsp;'}</span>
+        <span class="h-serve${serving ? '' : ' off'}">🎾 ${esc(serving ? svName || t(TEXT.server) : t(TEXT.server))}</span>
         <span class="h-points${pts === 'AD' ? ' adv' : ''}">${esc(pts)}</span>
         <span class="h-games"><small>${esc(t(TEXT.games))}</small> <b>${s.tiebreak === 'stb' ? '–' : s.games[team]}</b></span>
       </button>`;
@@ -540,6 +596,7 @@
         <div class="f-text">
         <h2>${esc(title)}</h2>
         ${s.endedBy === 'time' ? `<p>${esc(t(TEXT.byTime))}</p>` : ''}
+        ${s.endedBy === 'time' ? `<p class="playon">${esc(t(TEXT.playOn))}</p><div class="row"><button class="btn" data-act="more-time" data-min="30" type="button">⏳ ${esc(t(TEXT.moreTime))}</button><button class="btn" data-act="more-time" data-min="0" type="button">∞ ${esc(t(TEXT.noLimit))}</button></div>` : ''}
         <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (s.games.red || s.games.blue) ? [`${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
         ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="undo" type="button">↶ ${esc(t(TEXT.undoLast))}</button>
@@ -575,9 +632,10 @@
       remoteScore();
       const s = m.state;
       const lim = limitMs();
+      const [left, right] = sides();
       el.innerHTML = `
         <div class="board">
-          ${teamHalf('red')}
+          ${teamHalf(left)}
           <div class="centre">
             <div class="c-top">
               <span class="m-clock${lim ? ' limit' : ''}">${lim ? fmt(lim - elapsed()) : fmt(elapsed())}</span>
@@ -596,11 +654,12 @@
             </div>
             <p class="rotate-hint">↻ ${esc(t(TEXT.rotate))}</p>
           </div>
-          ${teamHalf('blue')}
+          ${teamHalf(right)}
         </div>
         ${getLang() === 'ca' && synth && voices.length && !voiceFor('ca') ? `<p class="m-note">${esc(t(TEXT.noCaVoice))}</p>` : ''}
         ${micState === 'denied' ? `<button class="m-micblocked" data-act="mic" type="button"><b>🎙 ${esc(t(TEXT.micBlocked))}</b><span>${esc(t(TEXT.micHow))}</span></button>` : ''}
         ${s.finished ? finishPanel() : ''}
+        ${summary && !s.finished && !m.pausedAt ? summaryPanel() : ''}
         ${showHeard ? `<div class="m-heard">${heardHtml(m, t, esc)}</div>` : ''}
         ${editing && !s.finished ? editPanel() : ''}
         ${m.pausedAt && !s.finished ? `<button class="m-overlay" data-act="resume" type="button"><b>⏸ ${esc(t(TEXT.paused))}</b><span>${esc(t(TEXT.tapResume))}</span></button>` : ''}
@@ -637,6 +696,8 @@
       const act = b.dataset.act;
       if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput, remote: !!m.setup.remote }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
+      else if (act === 'close-summary') hideSummary();
+      else if (act === 'more-time') playOn(Number(b.dataset.min));
       else if (act === 'heard') { showHeard = true; render(); }
       else if (act === 'close-heard') { showHeard = false; render(); }
       else if (act === 'copy-heard') copyHeard(b, m);
@@ -672,7 +733,7 @@
     function close() {
       closed = true;
       clearInterval(tick);
-      clearTimeout(speakTimer); clearTimeout(moodTimer); clearTimeout(flashTimer);
+      clearTimeout(speakTimer); clearTimeout(moodTimer); clearTimeout(flashTimer); clearTimeout(summaryTimer);
       listener?.stop(); listener = null;
       synth?.cancel();
       if (m.setup.remote) remoteOff();

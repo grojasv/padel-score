@@ -47,6 +47,7 @@
       finished: false,
       winner: null, // 'red' | 'blue' | 'draw'
       endedBy: null, // 'score' | 'time'
+      swapped: false, // ends changed an odd number of times: the teams now play on the other side
     };
   }
 
@@ -148,6 +149,12 @@
     if (s.lastGame) { finishByTime(s); ev.push('match'); }
     return { state: s, events: ev };
   }
+  // Every change of ends flips the sides (undo restores the old state, so the sides follow it too).
+  function applySides(prev, team) {
+    const r = apply(prev, team);
+    if (r.events.includes('changeEnds')) r.state.swapped = !prev.swapped;
+    return r;
+  }
 
   // What the next point would decide for each team: null | 'set' | 'match'.
   function stakes(s) {
@@ -161,7 +168,7 @@
   }
 
   function point(s, team) {
-    const r = apply(s, team);
+    const r = applySides(s, team);
     if (r.state.finished) return r;
     const st = stakes(r.state);
     const t = st.red === 'match' || st.blue === 'match' ? 'matchPoint' : st.red || st.blue ? 'setPoint' : null;
@@ -179,6 +186,12 @@
   function stop(s) {
     if (s.finished) return s;
     const n = clone(s); finishByTime(n); n.endedBy = 'stopped'; return n;
+  }
+
+  // Time ran out (or the players stopped) but they play on: the match is open again, score as it was.
+  function reopen(s) {
+    if (!s.finished || s.endedBy === 'score') return s;
+    const n = clone(s); n.finished = false; n.winner = null; n.endedBy = null; n.lastGame = false; return n;
   }
 
   // Manual correction from the edit panel. what: 'points' | 'games' | 'server'. Returns a new state.
@@ -292,7 +305,7 @@
     return out.join('. ');
   }
 
-  const api = { isGolden: goldenNow, init, point, timeUp, stop, adjust, server, display, call, stakes, totalGames, other, TEAMS, NUM };
+  const api = { isGolden: goldenNow, init, point, timeUp, stop, reopen, adjust, server, display, call, stakes, totalGames, other, TEAMS, NUM };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Scoring = api;
 })(typeof self !== 'undefined' ? self : this);

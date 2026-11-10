@@ -220,4 +220,37 @@ test('calls in Catalan and English exist', () => {
   assert.equal(S.call(r.state, r.events, 'en', 'red'), 'Advantage red');
 });
 
+test('sides: swap after games 1, 3, 5, every 6 tie-break points, odd sets; undo follows', () => {
+  let r = play(base(), game('r'));
+  assert.equal(r.state.swapped, true, 'after game 1');
+  r = play(r.state, game('r'));
+  assert.equal(r.state.swapped, true, 'no change after game 2');
+  r = play(r.state, game('r'));
+  assert.equal(r.state.swapped, false, 'after game 3');
+  let s = play(base(), games('rbrbrbrbrbrb')).state; // 6-6: 6 changes, tie-break
+  assert.equal(s.tiebreak, 'tb'); assert.equal(s.swapped, false);
+  s = play(s, 'rbrbrb').state; assert.equal(s.swapped, true, '6 tie-break points');
+  s = play(s, 'rr').state; // 7-6 (5-3)... not yet
+  s = play(s, 'r').state; // tie-break 6-3? play until the set ends
+  while (s.sets.length === 0) s = S.point(s, 'red').state;
+  assert.equal(s.swapped, false, '13-game set ends: change of ends');
+  const g5 = play(base(), games('rrrrr')).state; // 5-0 after odd games: swapped
+  const set = S.point(play(g5, 'rrr').state, 'red').state; // 6-0: even set, no change
+  assert.equal(g5.swapped, true); assert.equal(set.swapped, true);
+});
+
+test('reopen: play on after time, never after a real win', () => {
+  let s = play(base(), game('r')).state;
+  s = S.timeUp(s);
+  s = play(s, game('b')).state;
+  assert.equal(s.finished, true); assert.equal(s.endedBy, 'time');
+  const o = S.reopen(s);
+  assert.equal(o.finished, false); assert.equal(o.winner, null); assert.equal(o.lastGame, false);
+  assert.deepEqual(o.games, { red: 1, blue: 1 });
+  assert.equal(S.point(o, 'red').state.finished, false);
+  assert.equal(S.reopen(S.stop(base())).finished, false);
+  const won = play(base(), games('rrrrrr') + games('rrrrrr')).state;
+  assert.equal(won.endedBy, 'score'); assert.equal(S.reopen(won), won);
+});
+
 console.log(`${passed} passed${process.exitCode ? ', some FAILED' : ''}`);

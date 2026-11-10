@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.5.1'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.6.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -31,7 +31,10 @@
     time: { es: 'Tiempo de pista', ca: 'Temps de pista', en: 'Court time' },
     noLimit: { es: 'Sin límite', ca: 'Sense límit', en: 'No limit' },
     min: { es: 'min', ca: 'min', en: 'min' },
-    timeHelp: { es: 'Bolo avisa a los 5 y a 1 minuto. Al acabar el tiempo se juega el último juego.', ca: 'En Bolo avisa als 5 i a 1 minut. En acabar el temps es juga l’últim joc.', en: 'Bolo warns at 5 and 1 minute. When time is up, the current game is the last.' },
+    timeHelp: { es: 'Bolo avisa a los 5 y a 1 minuto. Al acabar el tiempo se juega el último juego. Si os quedáis más, al final puedes sumar 30 minutos o quitar el límite.', ca: 'En Bolo avisa als 5 i a 1 minut. En acabar el temps es juga l’últim joc. Si us quedeu més, al final pots sumar 30 minuts o treure el límit.', en: 'Bolo warns at 5 and 1 minute. When time is up, the current game is the last. If you stay on, the end screen can add 30 minutes or remove the limit.' },
+    sidesLegend: { es: 'Lados', ca: 'Costats', en: 'Sides' },
+    sides: { es: 'Rojo y azul cambian de lado en cada cambio de campo', ca: 'Vermell i blau canvien de costat a cada canvi de camp', en: 'Red and blue swap sides at every change of ends' },
+    sidesHelp: { es: 'Como en la pista: tras los juegos 1, 3, 5…, cada 6 puntos del tie-break y tras un set impar. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ azul.', ca: 'Com a la pista: després dels jocs 1, 3, 5…, cada 6 punts del tie-break i després d’un set senar. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ blau.', en: 'As on court: after games 1, 3, 5…, every 6 tie-break points and after an odd set. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ blue.' },
     serve: { es: 'Saque inicial', ca: 'Servei inicial', en: 'First serve' },
     draw: { es: 'Sortear', ca: 'Sorteja', en: 'Random' },
     firstOf: { es: '1.º en {t}', ca: '1r a {t}', en: '1st for {t}' },
@@ -225,7 +228,7 @@
     const deuce = { golden: TEXT.golden, advantage: TEXT.advantage, star: TEXT.star }[s.deuce];
     return [t(s.mode === 'singles' ? TEXT.singles : TEXT.doubles), t(deuce), t(s.superTiebreak ? TEXT.stbShort : TEXT.fullSet),
       s.timeLimit ? `⏳ ${s.timeLimit} ${t(TEXT.min)}` : t(TEXT.noLimit),
-      `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}${s.remote ? ' ⌚' : ''}`].join(' · ');
+      `${s.muted ? '🔇' : '🔊'}${voiceOk && s.voiceInput ? ' 🎙' : ''}${s.remote ? ' ⌚' : ''}${s.swapSides ? ' ↔' : ''}`].join(' · ');
   }
 
   // Ajustes: the default rules and voice options. Every change is saved at once and used by the next match.
@@ -247,6 +250,9 @@
         <fieldset><legend>${esc(t(TEXT.time))}</legend>
           ${seg('time', s.timeLimit, TIMES.map((m) => [m, m ? `${m} ${esc(t(TEXT.min))}` : esc(t(TEXT.noLimit))]))}
           <p class="help">${esc(t(TEXT.timeHelp))}</p></fieldset>
+        <fieldset><legend>${esc(t(TEXT.sidesLegend))}</legend>
+          <label class="check"><input type="checkbox" name="swapSides"${s.swapSides ? ' checked' : ''}> ↔ ${esc(t(TEXT.sides))}</label>
+          <p class="help">${esc(t(TEXT.sidesHelp))}</p></fieldset>
         <fieldset><legend>${esc(t(TEXT.voice))}</legend>
           <label class="check"><input type="checkbox" name="talk"${s.muted ? '' : ' checked'}> ${esc(t(TEXT.talk))}</label>
           ${voiceOk ? `<label class="check"><input type="checkbox" name="listen"${s.voiceInput ? ' checked' : ''}> ${esc(t(TEXT.listen))}</label>
@@ -266,7 +272,7 @@
     form.addEventListener('change', () => {
       const f = new FormData(form);
       const next = { ...loadSetup(), mode: f.get('mode'), deuce: f.get('deuce'), superTiebreak: f.get('stb') === '1',
-        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict'), remote: !!f.get('remote') };
+        timeLimit: Number(f.get('time')) || 0, muted: !f.get('talk'), strict: !!f.get('strict'), remote: !!f.get('remote'), swapSides: !!f.get('swapSides') };
       if (voiceOk) next.voiceInput = !!f.get('listen');
       store.set(KEY.setup, JSON.stringify(next));
       $('savedNote').textContent = `✓ ${t(TEXT.saved)}`;

@@ -2,6 +2,17 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.6.0] - 2026-11-10
+From Guille's first real match, with a tablet on the net.
+### Added
+- A big black summary after every game, set and tie-break change of ends, for 6 s (tap to close, the next point closes it too): who won the game, the games (or sets) huge in team colours, the set scores, who serves next, and "⇄ Cambio de campo" when it is time to change.
+- ⚙️ Ajustes → Lados: red and blue swap sides on the screen at every change of ends (after games 1, 3, 5…, every 6 tie-break points, after an odd set). Off by default. Undo swaps them back. The remote stays ⏮ red, ⏭ blue.
+- When the time limit ends the match, the end screen offers "⏳ +30 min" and "∞ Sin límite": the match opens again with the same score. The time spent on the end screen does not count.
+- A point heard by voice plays a louder three-note sound, so you know from the far end of the court that it was heard.
+- Looser voice words for colours shouted from far away ("rollo", "royo", "a sur", "hazul"…), in normal mode only. Strict mode is unchanged.
+### Changed
+- The scoreboard is built to be read from 5 m: points up to half the screen height, games in a big box, team names bigger, the sets and clock bigger. The serving side has a thick yellow ring and a yellow pill with the server's name. Bolo is smaller.
+
 ## [0.5.1] - 2026-11-09
 ### Changed
 - The band shows the winner and every set at the end ("¡Gana Guille · Ana!", "6-4 · 6-7 · 10-8"), "Súper tie-break" during it, and "Tie-break" next to 6-6.

@@ -73,7 +73,7 @@ Everything below is remembered between matches.
 - **Time limit:**
   - Bolo warns at 5 min and 1 min.
   - At 0 the current game is the last ("último juego").
-  - When it ends, the match ends. The winner is the leader in sets, then games in the current set, then total games. If all of these are equal, the match is a **draw**.
+  - When it ends, the match ends. The end screen offers +30 min or no limit (`Scoring.reopen`): same score, the end-screen time is not counted. The winner is the leader in sets, then games in the current set, then total games. If all of these are equal, the match is a **draw**.
   - In a tie-break, it ends at the end of the tie-break.
 - **Undo:** the state is immutable. Each point pushes the previous state onto a stack, undo pops it, and there is no limit.
 - **Edit panel:** sets the points, games and server directly, and can end the match now. It refuses a change that would end a set. Each change goes onto the undo stack. Sets are not edited: undo covers a wrong set.
@@ -84,7 +84,9 @@ Everything below is remembered between matches.
 - **Tap a half** = point for that team. A 600 ms tap guard stops double taps.
 - **Long-press** the centre (or ✏️) opens the edit panel.
 - Pause / exit with confirm. Screen wake lock while a match is open.
-- The halves never swap on a change of ends. Red stays left, so nobody gets confused.
+- By default the halves never swap: red stays left. With **Ajustes → Lados** (`setup.swapSides`) they follow the players: the engine flips `state.swapped` on every `changeEnds`, so undo restores the sides too.
+- Sized for a tablet on the net, read from 5 m: points up to ~50% of the height, games in a large box, a thick ball-yellow ring and a yellow name pill on the serving half.
+- **Summary** after every game, set and tie-break change of ends: full screen, black, 6 s, tap or the next point closes it. Shows the winner, the games (sets after a set) in team colours, set scores, the next server and "Cambio de campo".
 
 ## Voice out (umpire style)
 - After each point Bolo says the score with the **server's score first**: "Quince-cero", "Treinta iguales", "Iguales" / "Deuce", "Ventaja rojo", "Punto de oro".
@@ -103,7 +105,7 @@ Everything below is remembered between matches.
   - Player names score for their team **only in strict mode** ("punto Ana"). Players call each other by name all game.
   - EN colour words (`red`, `blue`) count only when the app is in English, because "red" is Spanish for the net.
   - Only the top recognition alternative is used, so "¡ojo!" is less likely to become "rojo".
-  - Small near-miss lists ("roja", "azúl", "a sul"…) live in `voice.js`.
+  - Small near-miss lists ("roja", "azúl", "a sul"…) live in `voice.js`. Normal mode also accepts what Chrome writes for a colour shouted from far away (`LOOSE`: "rollo", "royo", "a sur", "hazul"…). The cost: "qué rollo" scores red, and undo fixes it.
 - **Strict mode** (setting): only "punto + colour" counts. Use it if false points happen.
 - **Anti-echo:**
   - Recognition is aborted before every `speak()` and restarted 700 ms after the speech ends.
@@ -112,7 +114,7 @@ Everything below is remembered between matches.
   - Commands are dropped while Bolo speaks and for 700 ms after.
 - **Keep-alive:** Chrome ends recognition after silence or about a minute, so the loop restarts it on `onend`/`onerror`, with backoff on `not-allowed`/`network` errors. The mic dot shows the state: green listening, grey paused, red error with a tap to retry.
 - **De-dup:** one command per result. The same command within 1.5 s is ignored, and final results are preferred over interim ones.
-- **Confirm:** every accepted command plays a short two-tone sound right away, then the score is spoken. If it was wrong, say "deshacer".
+- **Confirm:** a voice point plays a loud three-note sound (a tap or remote plays the short two-tone one) right away, then the score is spoken. If it was wrong, say "deshacer".
 - **Heard log** (for tuning):
   - Every final phrase, command, error and tap is stored with the match time and what it did. This is capped at 250 entries per match, and kept on the 10 newest history entries.
   - Viewed from the ✏️ panel, the finish screen and the history, with a copy-as-text button.

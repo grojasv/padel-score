@@ -36,6 +36,14 @@ const cases = [
   ['punto Guille', { names: { red: ['Guille Rojas'] }, strict: true }, { cmd: 'point', team: 'red' }],
   ['punto Ana', { names: { blue: ['Ana'] }, strict: true }, { cmd: 'point', team: 'blue' }],
   ['punto Al', { names: { blue: ['Al'] }, strict: true }, null], // names under 3 letters are ignored
+  ['rollo', {}, { cmd: 'point', team: 'red' }], // shouted from far away
+  ['Royo', {}, { cmd: 'point', team: 'red' }],
+  ['a sur', {}, { cmd: 'point', team: 'blue' }],
+  ['hazul', {}, { cmd: 'point', team: 'blue' }],
+  ['rollo', { strict: true }, null],
+  ['punto rollo', { strict: true }, null], // strict mode keeps only the real words
+  ['qué rollo de bola', {}, { cmd: 'point', team: 'red' }], // the known cost of loose mode: undo fixes it
+  ['vamos al sur', {}, null],
 ];
 
 let fails = 0;

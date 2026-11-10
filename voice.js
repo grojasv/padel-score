@@ -16,7 +16,13 @@
     pause: ['pausa', 'pause'],
   };
   const EN_WORDS = { red: ['red'], blue: ['blue', 'blew'] };
-  const PHRASES = { blue: ['a sul', 'a zul'] }; // two-token near misses for "azul"
+  const PHRASES = { blue: ['a sul', 'a zul', 'a sur', 'ha sul', 'as ul'] }; // two-token near misses for "azul"
+  // What Chrome writes for a colour shouted from the far end of the court. Normal mode only: strict mode is for
+  // noisy courts, where a near miss must not score.
+  const LOOSE = {
+    red: ['rollo', 'royo', 'rocho', 'roxo', 'rogo', 'rojito', 'rojas', 'vermel', 'vermey', 'bermey', 'bermello'],
+    blue: ['asur', 'hazul', 'azull', 'azu', 'abul', 'azure', 'asules', 'blaus', 'blaw', 'blou'],
+  };
   const POINT = ['punto', 'punt', 'point', 'puntos', 'punts'];
 
   const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -36,8 +42,8 @@
 
     const named = (team) => (strict ? (names[team] || []).map((n) => norm(n).split(' ')[0]).filter((n) => n.length > 2) : []);
     const teamWords = {
-      red: [...WORDS.red, ...(lang === 'en' ? EN_WORDS.red : []), ...named('red')],
-      blue: [...WORDS.blue, ...(lang === 'en' ? EN_WORDS.blue : []), ...named('blue')],
+      red: [...WORDS.red, ...(strict ? [] : LOOSE.red), ...(lang === 'en' ? EN_WORDS.red : []), ...named('red')],
+      blue: [...WORDS.blue, ...(strict ? [] : LOOSE.blue), ...(lang === 'en' ? EN_WORDS.blue : []), ...named('blue')],
     };
     const hits = new Set();
     tokens.forEach((t, i) => {
