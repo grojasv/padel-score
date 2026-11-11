@@ -303,6 +303,7 @@
       if (c) {
         c.textContent = lim ? fmt(lim - elapsed()) : fmt(elapsed());
         c.classList.toggle('low', !!lim && lim - elapsed() <= 60000);
+        c.classList.toggle('long', c.textContent.length > 5);
       }
       if (!lim || m.state.finished || m.pausedAt) return;
       const left = lim - elapsed();
@@ -507,7 +508,7 @@
     let summary = null, summaryTimer = null;
     const SUMMARY_MS = 6000;
     function showSummary(events, team) {
-      summary = { events, team };
+      summary = { events, team, at: Date.now() };
       clearTimeout(summaryTimer);
       summaryTimer = setTimeout(hideSummary, SUMMARY_MS);
     }
@@ -708,7 +709,7 @@
           ${teamHalf(left)}
           <div class="centre">
             <div class="c-top">
-              <span class="m-clock${lim ? ' limit' : ''}">${lim ? fmt(lim - elapsed()) : fmt(elapsed())}</span>
+              <span class="m-clock${lim ? ' limit' : ''}${fmt(lim ? lim - elapsed() : elapsed()).length > 5 ? ' long' : ''}">${lim ? fmt(lim - elapsed()) : fmt(elapsed())}</span>
               ${window.Voice?.supported() ? `<button class="mic" data-act="mic" data-state="${micShown()}" title="${esc(micTitle())}" type="button" aria-label="${esc(micTitle())}" aria-pressed="${m.micOff || !m.setup.voiceInput ? 'false' : 'true'}">${icon('mic')}</button>` : ''}
             </div>
             ${setsTable()}
@@ -772,7 +773,9 @@
       if (menuOpen) menuOpen = false; // any other button closes the menu
       if (act === 'unlock') { unlock({ mic: !!m.setup.voiceInput, remote: !!m.setup.remote }); render(); startListening(); if (!m.stack.length) speak(startLine()); else speak(fullScore()); }
       else if (act === 'undo') { if (m.setup.voiceInput && m.stack.length) heard({ tap: 'undo' }); undo(); }
-      else if (act === 'close-summary') hideSummary();
+      // The tap that wins a game draws the summary under the finger, and that same tap's click lands on it:
+      // ignore clicks in the first moment so it does not close itself.
+      else if (act === 'close-summary') { if (summary && Date.now() - summary.at > 800) hideSummary(); }
       else if (act === 'more-time') playOn(Number(b.dataset.min));
       else if (act === 'heard') { showHeard = true; render(); }
       else if (act === 'close-heard') { showHeard = false; render(); }

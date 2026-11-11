@@ -2,6 +2,13 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.8.1] - 2026-11-11
+### Fixed
+- **The summary between games closed itself at once.** The tap that wins a game draws the summary under the finger, and the same tap's click landed on it and closed it. Clicks in its first 0.8 s are now ignored, so it stays its 6 s (or until a later tap).
+- **The clock did not fit with a long time limit** (1:30:00). It now shrinks to fit the centre column when it shows hours, and the mic button wraps under it when needed.
+### Tested
+- In the browser at 844×390: the game-winning tap followed by its click on the summary; the summary stays up after 3 s and a later tap closes it. The 90-minute clock fits at 568×320, 844×390 and 1280×800.
+
 ## [0.8.0] - 2026-11-11
 ### Added
 - **Bolo powers up.** When his hair turns gold (set point, match point, golden point), he now grows bigger with a short shake, gets red eyes and crackling bolts, the screen flashes twice and a rising power-up sound plays. It fires once, when the gold appears.

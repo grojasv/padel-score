@@ -194,8 +194,9 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px;
   padding: 6px 6px; background: #0b1530; position: relative; min-height: 0;
 }
-.c-top { display: flex; align-items: center; gap: 8px; }
-.m-clock { font-weight: 800; font-size: clamp(18px, 7vh, 48px); font-variant-numeric: tabular-nums; }
+.c-top { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: 100%; }
+.m-clock { font-weight: 800; font-size: clamp(14px, min(7vh, 3.6vw), 48px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.m-clock.long { font-size: clamp(13px, min(5.5vh, 2.6vw), 36px); } /* 1:30:00: smaller, the clock is not the point */
 .m-clock.limit::before { content: '⏳ '; font-size: 0.7em; }
 .m-clock.low { color: var(--gold); animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0.4; } }
