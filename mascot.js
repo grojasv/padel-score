@@ -16,6 +16,7 @@
     hairHi: '#3b3628',
     gold: '#ffcf24',
     goldHi: '#fff1a0',
+    glare: '#c1121f', // red pupils when powered up
     white: '#ffffff',
     mouth: '#5a1420',
     tongue: '#f07a8a',
@@ -43,6 +44,11 @@
       <polyline points="58,70 70,84 82,58 92,78 110,54 118,74 134,64" fill="none" stroke="${hi}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   }
+  // Powered up: crackling bolts on both sides.
+  const sparks = () => `<g class="bolo-sparks" stroke="${C.ink}" stroke-width="2.5" stroke-linejoin="round" fill="${C.goldHi}">
+      <polygon points="22,96 36,112 28,114 42,134 20,116 28,114"/><polygon points="178,96 164,112 172,114 158,134 180,116 172,114"/>
+      <polygon points="14,150 28,158 22,162 32,176 12,164 20,160"/><polygon points="186,150 172,158 178,162 168,176 188,164 180,160"/>
+    </g>`;
   const bangs = (gold) => `<polygon points="${pts(BANGS)}" fill="${gold ? C.gold : C.hair}" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>`;
 
   function brows(mood) {
@@ -53,7 +59,7 @@
     return `<path d="M66 119 Q78 114 90 119" ${s}/><path d="M110 119 Q122 114 134 119" ${s}/>`;
   }
 
-  function eyes(mood) {
+  function eyes(mood, gold) {
     // Big determined eyes: white with a sharp upper lid; pupils move as a group.
     const lid = mood === 'fierce' ? 8 : mood === 'sad' ? 4 : 0;
     const eye = (cx, flip) => {
@@ -70,7 +76,7 @@
     }
     return `${eye(78, false)}${eye(122, true)}
       <g class="bolo-pupils">
-        <ellipse cx="80" cy="147" rx="7" ry="9" fill="${C.ink}"/><ellipse cx="120" cy="147" rx="7" ry="9" fill="${C.ink}"/>
+        <ellipse cx="80" cy="147" rx="7" ry="9" fill="${gold ? C.glare : C.ink}"/><ellipse cx="120" cy="147" rx="7" ry="9" fill="${gold ? C.glare : C.ink}"/>
         <circle cx="82.5" cy="143" r="2.8" fill="${C.white}"/><circle cx="122.5" cy="143" r="2.8" fill="${C.white}"/>
       </g>`;
   }
@@ -109,9 +115,10 @@
     <path d="M152 100 Q124 140 152 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>`}
     ${bangs(gold)}
     ${brows(mood)}
-    ${eyes(mood)}
+    ${eyes(mood, gold)}
     <ellipse cx="62" cy="166" rx="8" ry="5" fill="${C.cheek}" opacity="0.45"/><ellipse cx="138" cy="166" rx="8" ry="5" fill="${C.cheek}" opacity="0.45"/>
     ${mouth(mood)}
+    ${gold ? sparks() : ''}
   </g>
 </svg>`;
   }

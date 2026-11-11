@@ -2,6 +2,13 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.8.0] - 2026-11-11
+### Added
+- **Bolo powers up.** When his hair turns gold (set point, match point, golden point), he now grows bigger with a short shake, gets red eyes and crackling bolts, the screen flashes twice and a rising power-up sound plays. It fires once, when the gold appears.
+- **Short ping pong match:** "1 juego a 6" in Ajustes › Partido. One game to 6, win by 2, serve every point from 5-5, ends change at 3. The one-game option at 11 is now labelled "1 juego a 11".
+### Tested
+- `test-pingpong.mjs`: 10 tests, including the short game. In the browser at 844×390: a short match to 5-0 (ends changed at 3, match point badge, the power-up with flash, sparks and bigger Bolo).
+
 ## [0.7.0] - 2026-11-10
 ### Added
 - **Ping pong.** A big Pádel | Ping pong switch at the top of the home screen. The choice is remembered and changes the whole app: orange accent, an orange Bolo with no seam, the title, Ajustes, the new-match screen and the 🏓 icons.

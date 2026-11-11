@@ -14,13 +14,14 @@
   const clone = (s) => JSON.parse(JSON.stringify(s));
   const BEST_OF = [1, 3, 5];
 
-  /* config: { mode: 'singles' | 'doubles', bestOf: 1 | 3 | 5, firstServe: 'red' | 'blue',
+  /* config: { mode: 'singles' | 'doubles', bestOf: 1 | 3 | 5, points: 11 | 6, firstServe: 'red' | 'blue',
    *           firstPlayer: { red: 0, blue: 0 } }  firstPlayer: in doubles, who serves first for the serving side
    *           and who receives first for the other side. */
   function init(config) {
     const c = {
       mode: config.mode === 'doubles' ? 'doubles' : 'singles',
       bestOf: BEST_OF.includes(Number(config.bestOf)) ? Number(config.bestOf) : 3,
+      points: Number(config.points) === 6 ? 6 : 11, // 6: the short game
       firstServe: config.firstServe === 'blue' ? 'blue' : 'red',
       firstPlayer: { red: config.firstPlayer?.red ? 1 : 0, blue: config.firstPlayer?.blue ? 1 : 0 },
     };
@@ -51,6 +52,8 @@
   }
 
   const toWin = (s) => Math.ceil(s.config.bestOf / 2);
+  const target = (s) => s.config.points || 11; // points to win a game
+  const half = (s) => Math.floor(target(s) / 2); // the deciding game changes ends here: 5 of 11, 3 of 6
   const deciding = (s) => s.sets.length === s.config.bestOf - 1; // the last possible game
   const partner = (p, mode) => (mode === 'doubles' ? { team: p.team, player: 1 - p.player } : p);
   const server = (s) => ({ ...s.srv });
@@ -64,7 +67,8 @@
     s.points[team]++;
     const { red, blue } = s.points;
 
-    if (s.points[team] >= 11 && s.points[team] - s.points[o] >= 2) {
+    const P = target(s);
+    if (s.points[team] >= P && s.points[team] - s.points[o] >= 2) {
       // ---- game over ----
       s.sets.push({ red, blue, kind: 'game' });
       s.games[team]++;
@@ -85,16 +89,16 @@
       return { state: s, events: ev };
     }
 
-    if (red === blue && red >= 10) { s.deuces++; ev.push('deuce'); }
-    // Serve changes every 2 points, and every point from 10-10.
-    if ((red >= 10 && blue >= 10) || (red + blue) % 2 === 0) {
+    if (red === blue && red >= P - 1) { s.deuces++; ev.push('deuce'); }
+    // Serve changes every 2 points, and every point from 10-10 (5-5 in the short game).
+    if ((red >= P - 1 && blue >= P - 1) || (red + blue) % 2 === 0) {
       const next = { ...s.rcv };
       s.rcv = partner(s.srv, s.config.mode);
       if (s.config.mode === 'singles') s.rcv = { ...s.srv };
       s.srv = next;
     }
-    // The deciding game: ends change when a side first reaches 5, and in doubles the receivers swap.
-    if (deciding(s) && !s.switched && Math.max(red, blue) === 5) {
+    // The deciding game: ends change when a side first reaches 5 (3 in the short game), and in doubles the receivers swap.
+    if (deciding(s) && !s.switched && Math.max(red, blue) === half(s)) {
       s.switched = true;
       ev.push('changeEnds');
       s.swapped = !prev.swapped;
@@ -151,7 +155,7 @@
     if (what === 'points') {
       const v = Math.max(0, n.points[team] + delta);
       const o = n.points[other(team)];
-      if (v >= 11 && v - o >= 2) return s; // would end the game: refuse
+      if (v >= target(n) && v - o >= 2) return s; // would end the game: refuse
       n.points[team] = v;
     } else if (what === 'games') {
       const v = Math.max(0, n.games[team] + delta);

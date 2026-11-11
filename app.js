@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.7.0'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.8.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -81,10 +81,11 @@
     pingpong: { es: 'Ping pong', ca: 'Ping-pong', en: 'Ping pong' },
     sport: { es: 'Deporte', ca: 'Esport', en: 'Sport' },
     bestOf: { es: 'Partido', ca: 'Partit', en: 'Match' },
-    bo1: { es: 'A 1 juego', ca: 'A 1 joc', en: '1 game' },
+    bo6: { es: '1 juego a 6', ca: '1 joc a 6', en: '1 game to 6' },
+    bo1: { es: '1 juego a 11', ca: '1 joc a 11', en: '1 game to 11' },
     bo3: { es: 'Al mejor de 3', ca: 'Al millor de 3', en: 'Best of 3' },
     bo5: { es: 'Al mejor de 5', ca: 'Al millor de 5', en: 'Best of 5' },
-    ppFormat: { es: 'Juegos a 11, con 2 de diferencia. El saque cambia cada 2 puntos, y cada punto desde 10-10. Se cambia de lado tras cada juego y a los 5 puntos del último.', ca: 'Jocs a 11, amb 2 de diferència. El servei canvia cada 2 punts, i cada punt des del 10-10. Es canvia de costat després de cada joc i als 5 punts de l’últim.', en: 'Games to 11, win by 2. Serve changes every 2 points, and every point from 10-10. Ends change after each game and at 5 points in the last one.' },
+    ppFormat: { es: 'Juegos a 11, con 2 de diferencia. El saque cambia cada 2 puntos, y cada punto desde 10-10. Se cambia de lado tras cada juego y a los 5 puntos del último. El juego corto es a 6: saque cada punto desde 5-5 y cambio de lado a los 3.', ca: 'Jocs a 11, amb 2 de diferència. El servei canvia cada 2 punts, i cada punt des del 10-10. Es canvia de costat després de cada joc i als 5 punts de l’últim. El joc curt és a 6: servei cada punt des del 5-5 i canvi de costat als 3.', en: 'Games to 11, win by 2. Serve changes every 2 points, and every point from 10-10. Ends change after each game and at 5 points in the last one. The short game is to 6: serve every point from 5-5, change ends at 3.' },
     hello: { es: '¡Hola! Soy Bolo. ¿Echamos un partido?', ca: 'Hola! Soc en Bolo. Fem un partit?', en: 'Hi! I’m Bolo. Fancy a match?' },
     loadError: { es: 'No se han podido cargar los datos.', ca: 'No s’han pogut carregar les dades.', en: 'Couldn’t load the data.' },
   };
@@ -247,7 +248,8 @@
       };
       store.set(KEY.setup, JSON.stringify(setup)); // names and serve are remembered for next time too
       const played = { ...setup, firstServe: serve === 'random' ? (Math.random() < 0.5 ? 'red' : 'blue') : serve };
-      if (isPP(played)) Object.assign(played, { mode: played.ppMode, bestOf: played.ppBestOf, timeLimit: 0 });
+      if (isPP(played)) Object.assign(played, { mode: played.ppMode, timeLimit: 0, // ppBestOf 6 = the short match: 1 game to 6
+        bestOf: played.ppBestOf === 6 ? 1 : played.ppBestOf, points: played.ppBestOf === 6 ? 6 : 11 });
       if (!voiceOk) played.voiceInput = false;
       if (played.mode === 'singles') played.names = { red: [played.names.red[0], ''], blue: [played.names.blue[0], ''] };
       const m = { setup: played, state: Match.engine(played).init(played), stack: [], startedAt: Date.now(), pausedMs: 0, pausedAt: null, warned: [] };
@@ -279,7 +281,7 @@
         <p class="help">${esc(t(TEXT.settingsHelp))}</p>
         ${pp ? `<fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.ppMode, [['singles', `👤 ${esc(t(TEXT.singles))}`], ['doubles', `👥 ${esc(t(TEXT.doubles))}`]])}</fieldset>
         <fieldset><legend>${esc(t(TEXT.bestOf))}</legend>
-          ${seg('bestOf', s.ppBestOf, [[1, esc(t(TEXT.bo1))], [3, esc(t(TEXT.bo3))], [5, esc(t(TEXT.bo5))]])}
+          ${seg('bestOf', s.ppBestOf, [[6, esc(t(TEXT.bo6))], [1, esc(t(TEXT.bo1))], [3, esc(t(TEXT.bo3))], [5, esc(t(TEXT.bo5))]])}
           <p class="help">${esc(t(TEXT.ppFormat))}</p></fieldset>` : `
         <fieldset><legend>${esc(t(TEXT.mode))}</legend>${seg('mode', s.mode, [['doubles', `👥 ${esc(t(TEXT.doubles))}`], ['singles', `👤 ${esc(t(TEXT.singles))}`]])}</fieldset>
         <fieldset><legend>${esc(t(TEXT.deuce))}</legend>

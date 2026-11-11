@@ -95,6 +95,21 @@
   // A point heard by voice: louder and three notes, so it can be heard from the far end of the court.
   const heardSound = (team) => { const f = team === 'red' ? [660, 880, 1100] : [587, 784, 988]; f.forEach((x, i) => tone(x, 110, i * 100, 0.6)); };
   const undoSound = () => { tone(700, 90); tone(440, 140, 90); };
+  // Bolo powers up (gold hair): a rising roar, a crackle, then a bright chord.
+  function powerSound(delay = 250) {
+    if (!audio) return;
+    const t0 = audio.currentTime + delay / 1000;
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(90, t0); o.frequency.exponentialRampToValueAtTime(880, t0 + 0.6);
+    g.gain.setValueAtTime(0.001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.5); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.7);
+    o.connect(g).connect(audio.destination); o.start(t0); o.stop(t0 + 0.72);
+    const n = audio.createBuffer(1, audio.sampleRate * 0.25, audio.sampleRate), d = n.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = audio.createBufferSource(), ng = audio.createGain();
+    src.buffer = n; ng.gain.value = 0.3; src.connect(ng).connect(audio.destination); src.start(t0 + 0.55);
+    [1047, 1319, 1568].forEach((f) => tone(f, 450, delay + 650, 0.3));
+  }
 
   // ---------- speech ----------
   const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
@@ -197,7 +212,7 @@
     Bolo.sport = pp ? 'pingpong' : 'padel';
     const BALL = pp ? '🏓' : '🎾';
     let lastTap = 0, listener = null, micState = 'off', flash = null, flashTimer = null, moodTimer = null, tick = null;
-    let mood = 'idle', speakTimer = null, closed = false;
+    let mood = 'idle', speakTimer = null, closed = false, wasGold = null, poweringUntil = 0; // null: not painted yet, so no power-up on open
     const lastLine = {};
 
     const save = () => store.set('padel-score.current', JSON.stringify(m));
@@ -457,9 +472,23 @@
       const st = Scoring.stakes(m.state);
       // Gold hair: set point, match point, every golden point (sudden death), and the win.
       const gold = m.state.finished ? m.state.winner !== 'draw' : !!(st.red || st.blue) || Scoring.isGolden(m.state);
-      const shown = m.state.finished ? 'cheer' : mood === 'idle' && gold ? 'fierce' : mood;
+      const shown = m.state.finished ? 'cheer' : gold ? 'fierce' : mood;
       w.innerHTML = Bolo.svg(shown, { gold });
+      w.classList.toggle('powered', gold && !m.state.finished);
+      w.classList.toggle('powering', Date.now() < poweringUntil); // render() rebuilds the wrap: keep the animation on
+      if (wasGold === false && gold && !m.state.finished) powerUp(w);
+      wasGold = gold;
       if (lookTeam) w.style.setProperty('--look-x', lookTeam === 'red' ? '-4px' : '4px');
+    }
+    function powerUp(w) {
+      powerSound();
+      poweringUntil = Date.now() + 700;
+      w.classList.add('powering');
+      const f = document.createElement('div');
+      f.className = 'power-flash';
+      f.addEventListener('animationend', () => f.remove());
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 1500); // also when animations are off
     }
     function react(team, events) {
       const w = el.querySelector('.bolo-wrap');

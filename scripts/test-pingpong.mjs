@@ -128,4 +128,23 @@ test('stop, reopen, adjust', () => {
   assert.deepEqual(P.server(s), { team: 'blue', player: 1 });
 });
 
+test('short game: 1 game to 6, win by 2, serve every point from 5-5, ends change at 3', () => {
+  const short = () => base({ bestOf: 1, points: 6 });
+  assert.equal(short().config.points, 6);
+  assert.equal(base().config.points, 11, '11 by default');
+  assert.equal(P.init({ points: 7 }).config.points, 11, 'only 6 or 11');
+  let r = play(short(), 'rrbb'); // 2-2
+  assert.ok(!r.events.includes('changeEnds'));
+  r = play(short(), 'rrr'); assert.ok(r.events.includes('changeEnds'), 'at 3'); assert.equal(r.state.swapped, true);
+  r = play(short(), 'r'.repeat(5)); assert.ok(r.events.includes('matchPoint'));
+  r = play(r.state, 'r'); assert.equal(r.state.finished, true); assert.deepEqual(r.state.sets[0], { red: 6, blue: 0, kind: 'game' });
+  let d = play(short(), 'rb'.repeat(5)); // 5-5
+  assert.ok(d.events.includes('deuce'));
+  const at = d.state.srv.team;
+  d = play(d.state, 'r'); assert.notEqual(d.state.srv.team, at, 'every point at 5-5');
+  assert.equal(d.state.finished, false, '6-5 is not a win');
+  d = play(d.state, 'r'); assert.equal(d.state.winner, 'red');
+  assert.equal(P.adjust(P.adjust(short(), 'points', 'red', 5), 'points', 'red', 1).points.red, 5, '6-0 would end the game');
+});
+
 console.log(`${passed} passed${process.exitCode ? ', some FAILED' : ''}`);

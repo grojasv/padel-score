@@ -75,6 +75,18 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 .bolo-wrap.talking .bolo-mouth { animation: talk 0.22s ease-in-out infinite alternate; transform-origin: 100px 176px; transform-box: view-box; }
 .bolo-hair.gold { filter: drop-shadow(0 0 6px rgba(255, 207, 36, 0.9)); }
 .bolo-aura { animation: aura 0.9s ease-in-out infinite alternate; transform-box: view-box; }
+.bolo-sparks { animation: crackle 0.35s steps(2) infinite; }
+@keyframes crackle { 0% { opacity: 1; } 50% { opacity: 0.2; } }
+/* Powered up (gold hair): bigger, stays in front of the board. powering = the moment it happens. */
+.centre .bolo-wrap { transition: transform 0.35s cubic-bezier(.3, 1.6, .5, 1); z-index: 2; }
+.centre .bolo-wrap.powered { transform: scale(1.4); }
+.centre .bolo-wrap.powering { animation: powerup 0.7s ease-out; }
+@keyframes powerup {
+  0% { transform: scale(1); } 20% { transform: scale(1.7) rotate(-4deg); } 35% { transform: scale(1.5) rotate(4deg); }
+  50% { transform: scale(1.6) rotate(-3deg); } 70% { transform: scale(1.45) rotate(2deg); } 100% { transform: scale(1.4); }
+}
+.power-flash { position: fixed; inset: 0; z-index: 50; pointer-events: none; background: radial-gradient(circle, #fff 0%, #ffe066 45%, #ffcf24 100%); opacity: 0; animation: powerflash 0.7s ease-out; }
+@keyframes powerflash { 0% { opacity: 0.95; } 25% { opacity: 0; } 45% { opacity: 0.8; } 100% { opacity: 0; } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes squash {
   0% { transform: scale(1, 1); } 25% { transform: scale(1.18, 0.82); } 55% { transform: translateY(-14px) scale(0.92, 1.1); } 100% { transform: scale(1, 1); }
@@ -82,7 +94,8 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 @keyframes talk { from { transform: scaleY(1); } to { transform: scaleY(0.55); } }
 @keyframes aura { from { opacity: 0.25; } to { opacity: 0.7; } }
 @media (prefers-reduced-motion: reduce) {
-  .bolo-wrap.idle .bolo-body, .bolo-wrap.bounce .bolo-body, .bolo-aura { animation: none; }
+  .bolo-wrap.idle .bolo-body, .bolo-wrap.bounce .bolo-body, .bolo-aura, .bolo-sparks, .centre .bolo-wrap.powering { animation: none; }
+  .power-flash { display: none; }
 }
 
 /* ---------- hub ---------- */
