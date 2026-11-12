@@ -77,12 +77,17 @@
     const Rec = getRec();
     if (!Rec) { opts.onState?.('unsupported'); return null; }
     let rec = null, wanted = true, held = !!opts.held, backoff = 0, timer = null, guard = null, lang = opts.lang || 'es', fallback = false;
-    let lastCmd = '', lastAt = 0;
+    let lastCmd = '', lastAt = 0, deafSince = 0; // deafSince: when it should have been listening but was not
+    const GAP_MS = opts.gapMs || 2000;
     const handled = new Set(); // result indexes already acted on (interim results come several times)
     const START_MS = opts.startMs || 5000; // tests use a shorter wait
 
     const state = (s) => opts.onState?.(s);
     const trace = (s) => opts.onTrace?.(s);
+    // onLive(true/false): a recognizer really listening or not. Chrome ends one every few seconds and the loop
+    // starts the next without a state change (the mic icon stays on), so the listening time is counted from this.
+    let isLive = false;
+    const live_ = (v) => { if (v !== isLive) { isLive = v; opts.onLive?.(v); } };
     // onHeard gets every final phrase and every command, with what happened to it, for the "what Bolo heard" log.
     function fire(cmd, key, text) {
       const sig = cmd.cmd + (cmd.team || '');
@@ -99,6 +104,7 @@
     function start() {
       clearTimeout(timer);
       if (!wanted || held || rec) return;
+      deafSince = deafSince || Date.now();
       const r = new Rec();
       rec = r;
       r.lang = fallback ? 'es-ES' : VOICE_LANG[lang] || 'es-ES';
@@ -109,7 +115,11 @@
       let live = false;
       r.onstart = () => {
         if (rec !== r) return;
-        live = true; clearTimeout(guard); backoff = 0; state('listening');
+        live = true; clearTimeout(guard); backoff = 0; live_(true);
+        // A word said in this gap left no trace: the log shows the gap instead.
+        if (deafSince && Date.now() - deafSince >= GAP_MS) trace(`mic gap ${Math.round((Date.now() - deafSince) / 1000)} s`);
+        deafSince = 0;
+        state('listening');
       };
       r.onresult = (e) => {
         if (rec !== r) return;
@@ -131,9 +141,10 @@
       };
       r.onend = () => {
         if (rec !== r) return; // an old recognizer, already replaced
-        rec = null; clearTimeout(guard);
+        rec = null; clearTimeout(guard); live_(false);
         if (!wanted) { state('off'); return; }
         if (held) { state('paused'); return; }
+        deafSince = deafSince || Date.now();
         later(backoff || 250);
       };
       clearTimeout(guard);
@@ -149,16 +160,16 @@
     function drop() {
       clearTimeout(timer); clearTimeout(guard);
       const r = rec;
-      rec = null;
+      rec = null; live_(false);
       if (r) { try { r.abort(); } catch { /* already stopped */ } }
     }
 
     if (held) state('paused'); else start();
     return {
       // Hold while Bolo speaks, so his own words are not heard as commands.
-      pause() { held = true; drop(); state('paused'); },
-      resume() { held = false; if (wanted) start(); },
-      stop() { wanted = false; held = false; drop(); state('off'); },
+      pause() { held = true; deafSince = 0; drop(); state('paused'); },
+      resume() { held = false; if (wanted) { deafSince = deafSince || Date.now(); start(); } },
+      stop() { wanted = false; held = false; deafSince = 0; drop(); state('off'); },
       // A tap on the mic: always a fresh recognizer, whatever state the old one is in.
       retry() { wanted = true; held = false; backoff = 0; drop(); start(); },
       setLang(l) { lang = l; fallback = false; drop(); if (wanted && !held) later(250); },

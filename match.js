@@ -42,6 +42,9 @@
     sets: { es: 'Sets', ca: 'Sets', en: 'Sets' },
     heard: { es: 'Lo que oyó Bolo', ca: 'El que va sentir en Bolo', en: 'What Bolo heard' },
     heardKey: { es: '✅ hecho · 🔇 ignorado, Bolo hablaba · ↺ repetido · · sin orden · ⚠️ error · 👆 toque', ca: '✅ fet · 🔇 ignorat, en Bolo parlava · ↺ repetit · · sense ordre · ⚠️ error · 👆 toc', en: '✅ done · 🔇 ignored, Bolo was talking · ↺ repeat · · no command · ⚠️ error · 👆 tap' },
+    voicePts: { es: 'Puntos: 🎙 voz · 👆 toque · ⌚ pulsera', ca: 'Punts: 🎙 veu · 👆 toc · ⌚ polsera', en: 'Points: 🎙 voice · 👆 tap · ⌚ band' },
+    byVoice: { es: 'por voz', ca: 'per veu', en: 'by voice' },
+    micShare: { es: 'Micro escuchando el {p}% del tiempo, {n} arranques', ca: 'Micro escoltant el {p}% del temps, {n} arrencades', en: 'Mic listening {p}% of the time, {n} starts' },
     heardEmpty: { es: 'Todavía no ha oído nada.', ca: 'Encara no ha sentit res.', en: 'Nothing heard yet.' },
     copy: { es: 'Copiar para enviar', ca: 'Copia per enviar', en: 'Copy to send' },
     copied: { es: 'Copiado', ca: 'Copiat', en: 'Copied' },
@@ -185,14 +188,32 @@
     const what = h.cmd ? ` → ${h.cmd.replace('point:', '').replace('red', t(TEXT.red)).replace('blue', t(TEXT.blue))}` : '';
     return `${mmss(h.s)} ${OUT[h.out] || '·'} «${h.text}»${what}`;
   }
+  // How the points were scored (m.src: one 2-letter tag per stack entry, 'vr' = voice red, 'tb' = tap blue,
+  // 'br' = band red, '' = an edit) and how long the mic really listened. null when the match has no such data.
+  function voiceStats(m) {
+    const src = (m.src || []).filter(Boolean);
+    if (!src.length) return null;
+    const out = { red: { v: 0, t: 0, b: 0 }, blue: { v: 0, t: 0, b: 0 } };
+    for (const x of src) out[x[1] === 'r' ? 'red' : 'blue'][x[0]]++;
+    for (const team of ['red', 'blue']) { const n = out[team].v + out[team].t + out[team].b; out[team].pct = n ? Math.round((out[team].v / n) * 100) : null; }
+    const dur = m.ms ?? Math.max(0, (m.finishedAt || m.pausedAt || Date.now()) - m.startedAt - (m.pausedMs || 0));
+    if (m.mic && dur > 0) out.mic = { pct: Math.min(100, Math.round((m.mic.ms / dur) * 100)), starts: m.mic.starts };
+    return out;
+  }
+  function statsLines(m, t) {
+    const st = voiceStats(m);
+    if (!st) return [];
+    const row = (team) => `${t(TEXT[team])}: 🎙 ${st[team].v} · 👆 ${st[team].t} · ⌚ ${st[team].b}${st[team].pct === null ? '' : ` (${st[team].pct}% ${t(TEXT.byVoice)})`}`;
+    return [row('red'), row('blue'), ...(st.mic ? [t(TEXT.micShare).replace('{p}', st.mic.pct).replace('{n}', st.mic.starts)] : [])];
+  }
   function heardText(m, t) {
     const names = (team) => (m.setup.names?.[team] || []).filter(Boolean).join(' · ') || t(TEXT[team]);
     return [`Padel Score · ${new Date(m.startedAt || m.at).toLocaleString()} · ${names('red')} – ${names('blue')}`,
-      t(TEXT.heardKey), ...(m.heard || []).map((h) => heardLine(h, t))].join('\n');
+      ...statsLines(m, t), t(TEXT.heardKey), ...(m.heard || []).map((h) => heardLine(h, t))].join('\n');
   }
   function heardHtml(m, t, esc) {
     const list = m.heard || [];
-    return `<div class="h-box"><h3>🎙 ${esc(t(TEXT.heard))}</h3><p class="h-key">${esc(t(TEXT.heardKey))}</p>
+    return `<div class="h-box"><h3>🎙 ${esc(t(TEXT.heard))}</h3>${statsLines(m, t).length ? `<p class="h-stats">${statsLines(m, t).map(esc).join('<br>')}</p>` : ''}<p class="h-key">${esc(t(TEXT.heardKey))}</p>
       ${list.length ? `<ol class="h-list">${list.map((h) => `<li class="${h.tap ? 'tap' : `o-${h.out}`}">${esc(heardLine(h, t))}</li>`).join('')}</ol>` : `<p>${esc(t(TEXT.heardEmpty))}</p>`}
       <div class="row"><button class="btn small" data-act="copy-heard" type="button">📋 ${esc(t(TEXT.copy))}</button>
       <button class="btn small go" data-act="close-heard" type="button">${esc(t(TEXT.close))}</button></div></div>`;
@@ -212,10 +233,14 @@
     Bolo.sport = pp ? 'pingpong' : 'padel';
     const BALL = pp ? '🏓' : '🎾';
     let lastTap = 0, listener = null, micState = 'off', flash = null, flashTimer = null, moodTimer = null, tick = null;
-    let mood = 'idle', speakTimer = null, closed = false, wasGold = null, poweringUntil = 0; // null: not painted yet, so no power-up on open
+    let mood = 'idle', speakTimer = null, closed = false, wasGold = null, poweringUntil = 0, micSince = 0; // null: not painted yet, so no power-up on open
     const lastLine = {};
 
-    const save = () => store.set('padel-score.current', JSON.stringify(m));
+    // Each save also adds the mic's listening time so far, so the numbers are right even mid-stretch.
+    const save = () => {
+      if (micSince) { const now = Date.now(); m.mic.ms += now - micSince; micSince = now; }
+      store.set('padel-score.current', JSON.stringify(m));
+    };
     const names = (team) => (m.setup.names?.[team] || []).filter(Boolean);
     const teamLabel = (team) => (names(team).length ? names(team).join(' · ') : t(TEXT[team]));
     const serverLabel = () => { const sv = Scoring.server(m.state); return names(sv.team)[sv.player] || t(TEXT[sv.team]); };
@@ -317,11 +342,18 @@
     }
 
     // ---------- scoring actions ----------
-    function addPoint(team, how) {
+    // Every undo step keeps how it was made (see voiceStats), so an undo also takes the point out of the count.
+    function remember(tag = '') {
+      m.stack.push(m.state);
+      m.src = m.src || [];
+      m.src.push(tag);
+      if (m.stack.length > 600) m.stack.shift();
+      if (m.src.length > 600) m.src.shift();
+    }
+    function addPoint(team, how = 'tap') {
       if (m.state.finished || m.pausedAt) return;
       hideSummary();
-      m.stack.push(m.state);
-      if (m.stack.length > 600) m.stack.shift();
+      remember(how[0] + team[0]);
       const r = Scoring.point(m.state, team);
       m.state = r.state;
       markFinished();
@@ -341,6 +373,7 @@
       if (!m.stack.length) return;
       hideSummary();
       m.state = m.stack.pop();
+      m.src?.pop();
       markFinished();
       save();
       undoSound();
@@ -392,7 +425,7 @@
       if (m.pausedAt) out = 'none';
       else if (action === 'undo') { if (m.stack.length) undo(); else out = 'none'; }
       else if (m.state.finished) out = 'finished';
-      else addPoint(action);
+      else addPoint(action, 'band');
       heard({ text: `⌚ ${source}`, cmd: action === 'undo' ? 'undo' : `point:${action}`, out });
     }
     function onKey(e) {
@@ -550,7 +583,7 @@
     // Time ran out but the players stay on court: open the match again with 30 more minutes, or no limit.
     function playOn(min) {
       if (!m.state.finished || m.state.endedBy !== 'time') return;
-      m.stack.push(m.state);
+      remember();
       m.state = Scoring.reopen(m.state);
       if (m.finishedAt) m.pausedMs += Date.now() - m.finishedAt; // the time on the end screen is not play time
       markFinished();
@@ -603,6 +636,11 @@
           isQuiet: quiet,
           onHeard: (h) => heard({ text: h.text, cmd: h.cmd ? h.cmd.cmd + (h.cmd.team ? `:${h.cmd.team}` : '') : null, out: h.outcome }),
           onState: setMic,
+          // Listening time and recognizer starts, for the voice numbers in the heard log (saved with the next point).
+          onLive: (on) => {
+            if (on && !micSince) { micSince = Date.now(); m.mic = m.mic || { ms: 0, starts: 0 }; m.mic.starts++; }
+            if (!on && micSince) { m.mic.ms += Date.now() - micSince; micSince = 0; }
+          },
         });
       });
     }
@@ -759,12 +797,12 @@
       const b = e.target.closest('[data-act],[data-adj],[data-server]');
       if (!b) return;
       if (b.dataset.adj) {
-        m.stack.push(m.state);
+        remember();
         m.state = Scoring.adjust(m.state, b.dataset.adj, b.dataset.team, Number(b.dataset.d));
         save(); render(); return;
       }
       if (b.dataset.server) {
-        m.stack.push(m.state);
+        remember();
         m.state = Scoring.adjust(m.state, 'server', b.dataset.server, Number(b.dataset.player));
         save(); render(); return;
       }
@@ -784,7 +822,7 @@
       else if (act === 'close-edit') { editing = false; render(); }
       else if (act === 'stop') {
         if (!confirm(t(TEXT.stopAsk))) return;
-        m.stack.push(m.state); m.state = Scoring.stop(m.state); markFinished(); editing = false; save();
+        remember(); m.state = Scoring.stop(m.state); markFinished(); editing = false; save();
         listener?.stop(); listener = null; render(); speak(Scoring.call(m.state, ['match'], getLang()));
       }
       else if (act === 'mute') { m.setup.muted = !m.setup.muted; if (m.setup.muted) synth?.cancel(); save(); render(); }
@@ -833,5 +871,5 @@
     return { close, rerender: () => { listener?.setLang(getLang()); render(); } };
   }
 
-  window.Match = { open, unlock, engine, TEXT, heardHtml, copyHeard };
+  window.Match = { open, unlock, engine, TEXT, heardHtml, copyHeard, voiceStats };
 })();

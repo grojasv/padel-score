@@ -113,6 +113,32 @@ const loops = [
       assert.ok(traces.includes('mic stuck: restart'));
     } finally { l.stop(); globalThis.window = { SpeechRecognition: AndroidRec }; }
   }],
+  ['a slow restart is traced as a mic gap; a quick one and Bolo talking are not', async () => {
+    recs = []; const traces = [];
+    class Slow extends AndroidRec { start() { this.t = setTimeout(() => { this.live = true; this.onstart?.(); }, 60); } }
+    globalThis.window = { SpeechRecognition: Slow };
+    const l = listen({ gapMs: 40, onState: () => {}, onTrace: (s) => traces.push(s) });
+    try {
+      await wait(90); assert.deepEqual(traces, ['mic gap 0 s']);
+      l.pause(); await wait(80); assert.equal(traces.length, 1, 'held: Bolo is talking');
+      globalThis.window = { SpeechRecognition: AndroidRec };
+      l.resume(); await wait(50); assert.equal(traces.length, 1, 'a 20 ms start is no gap');
+    } finally { l.stop(); globalThis.window = { SpeechRecognition: AndroidRec }; }
+  }],
+  ['Chrome ending a recognizer by itself: onLive goes off and on, the restart wait is not live', async () => {
+    recs = []; const live = [];
+    class Short extends AndroidRec { start() { super.start(); this.e = setTimeout(() => { this.began = true; this.live = false; this.onend?.(); }, 60); } abort() { clearTimeout(this.e); super.abort(); } }
+    globalThis.window = { SpeechRecognition: Short };
+    let on = 0, ms = 0;
+    const l = listen({ onState: () => {}, onLive: (v) => { live.push(v); if (v) on = Date.now(); else ms += Date.now() - on; } });
+    try {
+      await wait(700); l.stop();
+      const starts = live.filter(Boolean).length;
+      assert.ok(starts >= 2, `${starts} starts`);
+      assert.equal(starts, recs.filter((r) => r.began || r.live).length, 'one onLive(true) per started recognizer');
+      assert.ok(ms < 700 - 250 * (starts - 1), `live ${ms} ms counts the 250 ms waits`);
+    } finally { l.stop(); globalThis.window = { SpeechRecognition: AndroidRec }; }
+  }],
   ['retry (the mic button) always makes a fresh recognizer', async () => {
     recs = [];
     const l = listen({ onState: () => {} });

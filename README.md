@@ -34,5 +34,6 @@ Then open http://localhost:8767/.
 
 ## Tests
 ```bash
-node scripts/test-scoring.mjs && node scripts/test-voice.mjs && node scripts/validate.mjs
+npm install   # once: Playwright, for the browser test
+npm test
 ```

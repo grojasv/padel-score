@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.9.0'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.10.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -177,6 +177,7 @@
         return `<li><span class="h-date">${esc(dateFmt(e.at))} · ${e.minutes} min</span>
           <span class="h-teams">${isPP(e.setup) ? '🏓' : '🎾'} <b class="t-red">${esc(teamName(e.setup, 'red'))}</b> – <b class="t-blue">${esc(teamName(e.setup, 'blue'))}</b></span>
           <span class="h-score">${sets || '–'}</span>${w}
+          ${voicePct(e)}
           ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
       }).join('')}</ul>` : `<p class="empty">${esc(t(isPP(setupNow) ? TEXT.noHistoryPP : TEXT.noHistory))}</p>`}`;
     view.querySelectorAll('[data-sport]').forEach((b) => b.addEventListener('click', () => {
@@ -384,15 +385,22 @@
       onExit: () => { match = null; location.hash = '#/'; },
     });
   }
+  // "🎙 68% · 49%": the share of each team's points that were scored by voice (matches played with the mic).
+  function voicePct(e) {
+    const st = e.setup?.voiceInput && Match.voiceStats(e);
+    if (!st || (st.red.pct === null && st.blue.pct === null)) return '';
+    const p = (team) => `<b class="t-${team}">${st[team].pct === null ? '–' : `${st[team].pct}%`}</b>`;
+    return `<span class="h-voice">🎙 ${p('red')} · ${p('blue')}</span>`;
+  }
   // Writes a finished match to the history (once per startedAt) and clears it as the current match.
   function logMatch(done) {
     const s = done.state;
     const ms = Math.max(0, (done.finishedAt || Date.now()) - done.startedAt - (done.pausedMs || 0));
     const log = readLog();
     if (!log.some((e) => e.at === done.startedAt)) {
-      const entry = { at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000), heard: done.heard || [] };
+      const entry = { at: done.startedAt, setup: done.setup, sets: s.sets, games: s.games, winner: s.winner, endedBy: s.endedBy, minutes: Math.round(ms / 60000), heard: done.heard || [], src: done.src, mic: done.mic, ms };
       // The heard log is kept for the 10 newest matches only, to stay well inside the phone's storage.
-      const next = [entry, ...log].slice(0, 100).map((e, i) => (i < 10 ? e : { ...e, heard: undefined }));
+      const next = [entry, ...log].slice(0, 100).map((e, i) => (i < 10 ? e : { ...e, heard: undefined, src: undefined }));
       store.set(KEY.log, JSON.stringify(next));
     }
     store.del(KEY.current);

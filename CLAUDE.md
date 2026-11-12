@@ -14,7 +14,7 @@ Phone scoreboard for padel and tennis, run by Bolo (a padel ball mascot) with vo
 ## Rules
 - **ES is the source language.** CA and EN are translations. Every user-facing string has all 3.
 - Spoken lines are short (under about 12 words), with no emoji or symbols.
-- `node scripts/test-scoring.mjs`, `node scripts/test-pingpong.mjs`, `node scripts/test-voice.mjs` and `node scripts/validate.mjs` must pass before every commit.
+- `npm test` must pass before every commit: the 3 engine and voice tests, `validate.mjs` and `scripts/test-browser.mjs` (real Chromium via Playwright; `npm install` once, dev tooling only, the app still has no build step).
 - Everything that needs a user gesture (speech, AudioContext, mic, wake lock) happens inside the Start tap.
 - The mic is paused while Bolo speaks (anti-echo). The recognition loop restarts itself.
 - The match in progress is saved after every point. A reload never loses it.

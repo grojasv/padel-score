@@ -27,7 +27,7 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 - `voice.js`: speech recognition loop and command matching.
 - `mascot.js`: Bolo as SVG (`Bolo.svg(mood)`, `Bolo.head()`), UMD.
 - `data/lines.json`: Bolo's line pools (ES/CA/EN).
-- `scripts/test-scoring.mjs` and `scripts/test-voice.mjs`: node tests for the engine and the command matcher. `scripts/validate.mjs`: checks `lines.json` (3 languages, word limit). `scripts/make-icons.mjs`.
+- `scripts/test-scoring.mjs` and `scripts/test-voice.mjs`: node tests for the engine and the command matcher. `scripts/validate.mjs`: checks `lines.json` (3 languages, word limit). `scripts/test-browser.mjs`: real matches in Chromium at the 4 phone sizes. `scripts/make-icons.mjs`.
 
 ## Main screen (hub)
 - Bolo, big, bouncing gently. His eyes follow the last tap. A random `hello` line sits in a speech bubble.
@@ -156,7 +156,7 @@ Everything below is remembered between matches.
   - Each key holds `{ es: [...], ca: [...], en: [...] }`, with placeholders `{team}` and `{n}`.
 
 ## Quality gates
-- Run `node scripts/test-scoring.mjs`, `node scripts/test-voice.mjs` and `node scripts/validate.mjs` before every commit.
+- Run `npm test` before every commit.
 - Check the hub in portrait at 320×568 and 390×844. Check the scoreboard in landscape at 568×320 and 844×390. Do both in light and dark.
 - Voice in and out can only be confirmed on a real phone (Guille, Android Chrome).
 

@@ -2,6 +2,18 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.10.0] - 2026-11-12
+### Added
+- **Voice numbers in the heard log.** At the top: how each team's points were scored (🎙 voice, 👆 tap, ⌚ band, with the share by voice) and how much of the match the mic was really listening. An undone point leaves the count. The history shows the voice share per team on each match («🎙 68% · 49%»), so one match tells whether a word works.
+- **Mic gaps in the heard log.** When the mic takes 2 s or more to restart (outside Bolo's own talking), the log says «mic gap N s»: a word said then left no other trace. The listening time counts only while a recognizer is really running: Chrome ends one every few seconds and starts the next, and those waits are not listening.
+- **A browser test** (`scripts/test-browser.mjs`, `npm install` once): plays padel and ping pong in a real Chromium with real taps and a fake recognizer, at 568×320, 844×390, 320×568 and 390×844, light and dark, and checks that nothing is cut off.
+### Fixed
+(Found by the new browser test and the screenshots of two full matches.)
+- **844×390: the team name was squeezed** against the serve pill and clipped at the top (the v0.9.0 sizes were about 13 px too tall). The points are a little smaller (64vh instead of 68vh).
+- **Portrait: the summary title ran off the screen** («Cambio de campo» was sized by height, 100 px on a tall phone, and wrapped to 3 lines). In portrait it is sized by width.
+- **320 px wide, ping pong: the language switcher stuck out** past the right edge («Ping pong Score» was too wide). The title is smaller on narrow screens.
+- **Bolo's bubble showed the top of a cut-off third line** under its 2 lines.
+
 ## [0.9.0] - 2026-11-12
 ### Changed
 - **Blue is now green.** The second team is «Verde» (Verd, Green) on every screen, in Bolo's calls and in the help. «Verde» is easier for the phone to recognise than «azul». The green (#0f8a3c, white text 4.45:1) is a little darker than the red, so the white numbers stand out on both. Saved matches and history keep working: inside the app the team is still `blue`.

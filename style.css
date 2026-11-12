@@ -57,14 +57,14 @@ button { font: inherit; color: inherit; }
   padding: max(12px, env(safe-area-inset-top)) 16px 8px;
   max-width: 720px; margin: 0 auto;
 }
-.brand { white-space: nowrap; text-decoration: none; font-family: Bungee, Rubik, sans-serif; font-size: 22px; letter-spacing: 0.5px; }
+.brand { white-space: nowrap; text-decoration: none; font-family: Bungee, Rubik, sans-serif; font-size: clamp(15px, 5vw, 22px); letter-spacing: 0.5px; }
 .brand b { color: var(--court); font-weight: 400; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand b { color: var(--ball); } }
-.langs { display: flex; gap: 4px; background: var(--card); border: 2px solid var(--line); border-radius: 999px; padding: 3px; }
+.langs { flex-shrink: 0; display: flex; gap: 4px; background: var(--card); border: 2px solid var(--line); border-radius: 999px; padding: 3px; }
 .langs button { border: 0; background: none; padding: 5px 9px; border-radius: 999px; font-weight: 700; font-size: 13px; cursor: pointer; color: var(--muted); }
 .langs button.active { background: var(--court); color: #fff; }
 
-@media (max-width: 360px) { .brand { font-size: 18px; } .bubble { font-size: 16px; } }
+@media (max-width: 360px) { .brand { font-size: 15px; } .bubble { font-size: 16px; } }
 main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 
 /* ---------- Bolo ---------- */
@@ -184,12 +184,12 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-blue { background: radial-gradient(circle at 50% 40%, var(--blue), var(--blue-dark)); }
 /* Numbers in Oswald: tall, condensed scoreboard digits, so the same width holds much taller numbers. */
 .h-points, .h-games b, .s-team b, .m-clock { font-family: Oswald, Rubik, sans-serif; }
-.h-name { font-family: Bungee, Rubik, sans-serif; font-size: clamp(16px, 7vh, 60px); text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-name { font-family: Bungee, Rubik, sans-serif; font-size: clamp(16px, 7vh, 60px); line-height: 1.1; text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Serving: a thick ball-yellow ring round the half and a yellow pill with the server. Readable from the far end. */
 .h-serve { font-size: clamp(14px, 5.5vh, 44px); font-weight: 800; line-height: 1.2; padding: 0.05em 0.6em; border-radius: 999px; background: var(--serve); color: #12203d; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .h-serve.off { visibility: hidden; }
 .half.serving { box-shadow: inset 0 0 0 clamp(6px, 1.8vh, 16px) var(--serve); }
-.h-points { font-weight: 700; font-size: clamp(80px, min(68vh, 35vw), 760px); line-height: 0.95; font-variant-numeric: tabular-nums; text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); }
+.h-points { font-weight: 700; font-size: clamp(80px, min(64vh, 35vw), 760px); line-height: 0.95; font-variant-numeric: tabular-nums; text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); }
 .h-points.adv { color: var(--gold); }
 .h-games { font-size: clamp(22px, 17vh, 150px); line-height: 1.1; font-weight: 800; background: rgba(0, 0, 0, 0.3); padding: 0 0.4em; border-radius: 0.3em; font-variant-numeric: tabular-nums; }
 .h-games b { font-weight: 700; }
@@ -220,7 +220,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .centre .bolo-wrap { width: min(70%, 13vh, 84px); width: min(70%, 13svh, 84px); flex: 0 1 auto; cursor: pointer; } /* svh: the height left by the browser bars */
 .m-bubble {
   font-size: clamp(11px, 3.4vh, 15px); font-weight: 700; text-align: center; background: #fff; color: #12203d; border-radius: 12px;
-  padding: 4px 8px; max-width: 100%; opacity: 0; transition: opacity 0.3s; min-height: 1.6em;
+  padding: 0; border: solid #fff; border-width: 4px 8px; /* a border, not padding: the cut-off 3rd line showed through the padding */ max-width: 100%; opacity: 0; transition: opacity 0.3s; min-height: 1.6em;
   flex: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; /* never under the buttons */
 }
 .m-bubble.show { opacity: 1; animation: fadeout 6s forwards; }
@@ -316,6 +316,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-box { background: #13254a; color: #fff; border-radius: 16px; padding: 12px; width: min(100%, 620px); max-height: 100%; display: flex; flex-direction: column; gap: 6px; }
 .h-box h3 { margin: 0; font-size: 17px; }
 .h-key { margin: 0; font-size: 12px; opacity: 0.75; }
+.h-stats { margin: 0; font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .h-list { margin: 0; padding: 0; list-style: none; overflow: auto; font-size: 14px; font-variant-numeric: tabular-nums; flex: 1 1 auto; min-height: 60px; }
 .h-list li { padding: 3px 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .h-list li.o-ok { color: #9ff0b8; } .h-list li.o-quiet, .h-list li.o-dup { color: #ffd98a; } .h-list li.o-error { color: #ff8a93; }
@@ -374,6 +375,10 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 @media (orientation: portrait) {
   .s-teams { grid-template-columns: 1fr; gap: 1vh; }
   .s-team b { font-size: clamp(56px, 16vh, 200px); }
+  /* sized by width: by height, «Cambio de campo» wrapped to 3 lines and ran off a tall phone */
+  .s-title { font-size: clamp(22px, 9vw, 64px); text-align: center; }
+  .s-change { font-size: clamp(18px, 7vw, 48px); }
+  .s-label, .s-serve { font-size: clamp(14px, 5vw, 32px); text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) { .m-sum, .s-change { animation: none; } }
 .m-finish .btn[data-act="undo"] { flex-direction: row; }
