@@ -40,6 +40,13 @@ const cases = [
   ['Royo', {}, { cmd: 'point', team: 'red' }],
   ['a sur', {}, { cmd: 'point', team: 'blue' }],
   ['hazul', {}, { cmd: 'point', team: 'blue' }],
+  ['turquesa', {}, { cmd: 'point', team: 'blue' }],
+  ['Turquesa', { lang: 'ca' }, { cmd: 'point', team: 'blue' }],
+  ['punto turquesa', { strict: true }, { cmd: 'point', team: 'blue' }],
+  ['turquesa', { strict: true }, null],
+  ['turkesa', {}, { cmd: 'point', team: 'blue' }],
+  ['turkesa', { strict: true }, null],
+  ['rojo turquesa', {}, null],
   ['rollo', { strict: true }, null],
   ['punto rollo', { strict: true }, null], // strict mode keeps only the real words
   ['qué rollo de bola', {}, { cmd: 'point', team: 'red' }], // the known cost of loose mode: undo fixes it

@@ -106,7 +106,7 @@ Everything below is remembered between matches.
 - Uses Web Speech `SpeechRecognition` / `webkitSpeechRecognition`, `continuous` + `interimResults`, in the language of the UI.
 - **Commands** (ES / CA / EN). A point needs the colour word alone, or with "punto"/"punt"/"point":
   - point red: `rojo` / `vermell` / `red`
-  - point blue: `azul` / `blau` / `blue`
+  - point blue: `azul` / `blau` / `blue` / `turquesa` (added 2026-11-12: on court "azul" scored by voice 49% of blue points vs 68% for "rojo"; a word with hard T and K sounds should carry better, to be checked in the next heard log)
   - undo: `deshacer`, `anula` / `desfés`, `anul·la` / `undo`, `cancel`. Not "error" or "atrás": players say those during play.
   - repeat score: `marcador` / `marcador` / `score`
   - pause: `pausa` / `pausa` / `pause`

@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.8.1'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.8.2'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -42,8 +42,8 @@
     firstOf: { es: '1.º en {t}', ca: '1r a {t}', en: '1st for {t}' },
     voice: { es: 'Voz', ca: 'Veu', en: 'Voice' },
     talk: { es: 'Bolo canta el marcador', ca: 'En Bolo canta el marcador', en: 'Bolo calls the score' },
-    listen: { es: 'Control por voz: di «rojo» o «azul»', ca: 'Control per veu: digues «vermell» o «blau»', en: 'Voice control: say “red” or “blue”' },
-    strict: { es: 'Modo estricto: solo «punto rojo» / «punto azul»', ca: 'Mode estricte: només «punt vermell» / «punt blau»', en: 'Strict: only “point red” / “point blue”' },
+    listen: { es: 'Control por voz: di «rojo» o «turquesa» (o «azul»)', ca: 'Control per veu: digues «vermell» o «turquesa» (o «blau»)', en: 'Voice control: say “red” or “turquoise” (or “blue”)' },
+    strict: { es: 'Modo estricto: solo «punto rojo» / «punto turquesa»', ca: 'Mode estricte: només «punt vermell» / «punt turquesa»', en: 'Strict: only “point red” / “point turquoise”' },
     voiceHelp: { es: 'También: «deshacer», «marcador», «pausa». Funciona en Chrome con conexión. El micro se pausa mientras Bolo habla.', ca: 'També: «desfés», «marcador», «pausa». Funciona a Chrome amb connexió. El micro es pausa mentre en Bolo parla.', en: 'Also: “undo”, “score”, “pause”. Works in Chrome with a connection. The mic pauses while Bolo talks.' },
     noVoice: { es: 'Este navegador no reconoce la voz. Usa Chrome para el control por voz.', ca: 'Aquest navegador no reconeix la veu. Fes servir Chrome per al control per veu.', en: 'This browser has no speech recognition. Use Chrome for voice control.' },
     start: { es: '¡A jugar!', ca: 'A jugar!', en: 'Play!' },

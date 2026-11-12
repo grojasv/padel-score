@@ -10,7 +10,9 @@
   // the app is in English, because "red" is Spanish for the net ("¡a la red!").
   const WORDS = {
     red: ['rojo', 'roja', 'rojos', 'vermell', 'vermella', 'bermell'],
-    blue: ['azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao'],
+    // turquesa (Guille, 2026-11-12): "azul" starts soft and was missed far more than "rojo" on court. A word
+    // with hard T and K sounds carries better; azul keeps working.
+    blue: ['azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao', 'turquesa', 'turquesas', 'turquoise'],
     undo: ['deshacer', 'deshaz', 'anula', 'anular', 'desfes', 'desfer', 'anulla', 'undo', 'cancel'],
     score: ['marcador', 'resultado', 'score'],
     pause: ['pausa', 'pause'],
@@ -21,7 +23,7 @@
   // noisy courts, where a near miss must not score.
   const LOOSE = {
     red: ['rollo', 'royo', 'rocho', 'roxo', 'rogo', 'rojito', 'rojas', 'vermel', 'vermey', 'bermey', 'bermello'],
-    blue: ['asur', 'hazul', 'azull', 'azu', 'abul', 'azure', 'asules', 'blaus', 'blaw', 'blou'],
+    blue: ['asur', 'hazul', 'azull', 'azu', 'abul', 'azure', 'asules', 'blaus', 'blaw', 'blou', 'turkesa', 'turquese', 'turquessa', 'turqueza'],
   };
   const POINT = ['punto', 'punt', 'point', 'puntos', 'punts'];
 

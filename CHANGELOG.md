@@ -2,6 +2,10 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.8.2] - 2026-11-12
+### Changed
+- **Say «turquesa» for a blue point.** In the last match «azul» scored only 49% of blue points by voice (31 of 63; the rest by tap or band) against 68% for «rojo». The missed «azul»s left nothing in the heard log, so more near-miss spellings would not help: «turquesa» has hard T and K sounds that should carry from the far end. «Azul» keeps working. Strict mode: «punto turquesa». The Ajustes help says it.
+
 ## [0.8.1] - 2026-11-11
 ### Fixed
 - **The summary between games closed itself at once.** The tap that wins a game draws the summary under the finger, and the same tap's click landed on it and closed it. Clicks in its first 0.8 s are now ignored, so it stays its 6 s (or until a later tap).
