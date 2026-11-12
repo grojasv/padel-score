@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.8.2'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.9.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -17,7 +17,7 @@
     singles: { es: 'Individual', ca: 'Individual', en: 'Singles' },
     teams: { es: 'Equipos', ca: 'Equips', en: 'Teams' },
     red: { es: 'Rojo', ca: 'Vermell', en: 'Red' },
-    blue: { es: 'Azul', ca: 'Blau', en: 'Blue' },
+    blue: { es: 'Verde', ca: 'Verd', en: 'Green' },
     player: { es: 'Jugador', ca: 'Jugador', en: 'Player' },
     namesOpt: { es: 'nombres opcionales', ca: 'noms opcionals', en: 'names optional' },
     deuce: { es: 'En 40-40', ca: 'A 40-40', en: 'At 40-40' },
@@ -34,16 +34,16 @@
     min: { es: 'min', ca: 'min', en: 'min' },
     timeHelp: { es: 'Bolo avisa a los 5 y a 1 minuto. Al acabar el tiempo se juega el último juego. Si os quedáis más, al final puedes sumar 30 minutos o quitar el límite.', ca: 'En Bolo avisa als 5 i a 1 minut. En acabar el temps es juga l’últim joc. Si us quedeu més, al final pots sumar 30 minuts o treure el límit.', en: 'Bolo warns at 5 and 1 minute. When time is up, the current game is the last. If you stay on, the end screen can add 30 minutes or remove the limit.' },
     sidesLegend: { es: 'Lados', ca: 'Costats', en: 'Sides' },
-    sides: { es: 'Rojo y azul cambian de lado en cada cambio de campo', ca: 'Vermell i blau canvien de costat a cada canvi de camp', en: 'Red and blue swap sides at every change of ends' },
-    sidesHelpPP: { es: 'Como en la mesa: tras cada juego y a los 5 puntos del último juego. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ azul.', ca: 'Com a la taula: després de cada joc i als 5 punts de l’últim joc. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ blau.', en: 'As at the table: after each game and at 5 points in the last game. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ blue.' },
-    sidesHelp: { es: 'Como en la pista: tras los juegos 1, 3, 5…, cada 6 puntos del tie-break y tras un set impar. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ azul.', ca: 'Com a la pista: després dels jocs 1, 3, 5…, cada 6 punts del tie-break i després d’un set senar. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ blau.', en: 'As on court: after games 1, 3, 5…, every 6 tie-break points and after an odd set. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ blue.' },
+    sides: { es: 'Rojo y verde cambian de lado en cada cambio de campo', ca: 'Vermell i verd canvien de costat a cada canvi de camp', en: 'Red and green swap sides at every change of ends' },
+    sidesHelpPP: { es: 'Como en la mesa: tras cada juego y a los 5 puntos del último juego. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ verde.', ca: 'Com a la taula: després de cada joc i als 5 punts de l’últim joc. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ verd.', en: 'As at the table: after each game and at 5 points in the last game. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ green.' },
+    sidesHelp: { es: 'Como en la pista: tras los juegos 1, 3, 5…, cada 6 puntos del tie-break y tras un set impar. Apagado, rojo siempre a la izquierda. El mando no cambia: ⏮ rojo, ⏭ verde.', ca: 'Com a la pista: després dels jocs 1, 3, 5…, cada 6 punts del tie-break i després d’un set senar. Apagat, vermell sempre a l’esquerra. El comandament no canvia: ⏮ vermell, ⏭ verd.', en: 'As on court: after games 1, 3, 5…, every 6 tie-break points and after an odd set. Off: red always on the left. The remote stays the same: ⏮ red, ⏭ green.' },
     serve: { es: 'Saque inicial', ca: 'Servei inicial', en: 'First serve' },
     draw: { es: 'Sortear', ca: 'Sorteja', en: 'Random' },
     firstOf: { es: '1.º en {t}', ca: '1r a {t}', en: '1st for {t}' },
     voice: { es: 'Voz', ca: 'Veu', en: 'Voice' },
     talk: { es: 'Bolo canta el marcador', ca: 'En Bolo canta el marcador', en: 'Bolo calls the score' },
-    listen: { es: 'Control por voz: di «rojo» o «turquesa» (o «azul»)', ca: 'Control per veu: digues «vermell» o «turquesa» (o «blau»)', en: 'Voice control: say “red” or “turquoise” (or “blue”)' },
-    strict: { es: 'Modo estricto: solo «punto rojo» / «punto turquesa»', ca: 'Mode estricte: només «punt vermell» / «punt turquesa»', en: 'Strict: only “point red” / “point turquoise”' },
+    listen: { es: 'Control por voz: di «rojo» o «verde»', ca: 'Control per veu: digues «vermell» o «verd»', en: 'Voice control: say “red” or “green”' },
+    strict: { es: 'Modo estricto: solo «punto rojo» / «punto verde»', ca: 'Mode estricte: només «punt vermell» / «punt verd»', en: 'Strict: only “point red” / “point green”' },
     voiceHelp: { es: 'También: «deshacer», «marcador», «pausa». Funciona en Chrome con conexión. El micro se pausa mientras Bolo habla.', ca: 'També: «desfés», «marcador», «pausa». Funciona a Chrome amb connexió. El micro es pausa mentre en Bolo parla.', en: 'Also: “undo”, “score”, “pause”. Works in Chrome with a connection. The mic pauses while Bolo talks.' },
     noVoice: { es: 'Este navegador no reconoce la voz. Usa Chrome para el control por voz.', ca: 'Aquest navegador no reconeix la veu. Fes servir Chrome per al control per veu.', en: 'This browser has no speech recognition. Use Chrome for voice control.' },
     start: { es: '¡A jugar!', ca: 'A jugar!', en: 'Play!' },
@@ -52,7 +52,7 @@
     saved: { es: 'Guardado', ca: 'Desat', en: 'Saved' },
     remoteLegend: { es: 'Mando', ca: 'Comandament', en: 'Remote' },
     remote: { es: 'Pulsera o mando Bluetooth', ca: 'Polsera o comandament Bluetooth', en: 'Band or Bluetooth remote' },
-    remoteHelp: { es: 'Con los botones de música de la pulsera (Mi Band, reloj o auriculares): ⏮ punto rojo, ⏭ punto azul, ⏯ deshacer. Un mando o teclado Bluetooth: ← rojo, → azul, ↑ o ↓ deshacer. Necesita Mi Fitness con acceso a notificaciones. El marcador sale en la pulsera como si fuera una canción.', ca: 'Amb els botons de música de la polsera (Mi Band, rellotge o auriculars): ⏮ punt vermell, ⏭ punt blau, ⏯ desfer. Un comandament o teclat Bluetooth: ← vermell, → blau, ↑ o ↓ desfer. Necessita Mi Fitness amb accés a les notificacions. El marcador surt a la polsera com si fos una cançó.', en: 'With the band’s music buttons (Mi Band, watch or headphones): ⏮ point red, ⏭ point blue, ⏯ undo. A Bluetooth remote or keyboard: ← red, → blue, ↑ or ↓ undo. Needs Mi Fitness with notification access. The score shows on the band like a song.' },
+    remoteHelp: { es: 'Con los botones de música de la pulsera (Mi Band, reloj o auriculares): ⏮ punto rojo, ⏭ punto verde, ⏯ deshacer. Un mando o teclado Bluetooth: ← rojo, → verde, ↑ o ↓ deshacer. Necesita Mi Fitness con acceso a notificaciones. El marcador sale en la pulsera como si fuera una canción.', ca: 'Amb els botons de música de la polsera (Mi Band, rellotge o auriculars): ⏮ punt vermell, ⏭ punt verd, ⏯ desfer. Un comandament o teclat Bluetooth: ← vermell, → verd, ↑ o ↓ desfer. Necessita Mi Fitness amb accés a les notificacions. El marcador surt a la polsera com si fos una cançó.', en: 'With the band’s music buttons (Mi Band, watch or headphones): ⏮ point red, ⏭ point green, ⏯ undo. A Bluetooth remote or keyboard: ← red, → green, ↑ or ↓ undo. Needs Mi Fitness with notification access. The score shows on the band like a song.' },
     micTest: { es: 'Probar micrófono', ca: 'Provar micròfon', en: 'Test microphone' },
     micTestHelp: { es: 'Pide el permiso y escucha 6 segundos. Di «rojo».', ca: 'Demana el permís i escolta 6 segons. Digues «vermell».', en: 'Asks for permission and listens for 6 seconds. Say “red”.' },
     mtBefore: { es: 'Permiso antes', ca: 'Permís abans', en: 'Permission before' },

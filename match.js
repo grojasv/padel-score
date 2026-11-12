@@ -5,7 +5,7 @@
 (() => {
   const TEXT = {
     red: { es: 'Rojo', ca: 'Vermell', en: 'Red' },
-    blue: { es: 'Azul', ca: 'Blau', en: 'Blue' },
+    blue: { es: 'Verde', ca: 'Verd', en: 'Green' },
     games: { es: 'Juegos', ca: 'Jocs', en: 'Games' },
     undo: { es: 'Deshacer', ca: 'Desfés', en: 'Undo' },
     edit: { es: 'Corregir', ca: 'Corregeix', en: 'Fix' },

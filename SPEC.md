@@ -1,6 +1,6 @@
 # Padel Score: plan and decisions
 
-Phone scoreboard for padel (and tennis) matches, run by **Bolo**, a bouncy padel ball with spiky anime-hero hair. It speaks the score after every point, and the players score points by voice ("rojo", "azul") or by tapping. ES is the main and tested language; CA and EN are translations.
+Phone scoreboard for padel (and tennis) matches, run by **Bolo**, a bouncy padel ball with spiky anime-hero hair. It speaks the score after every point, and the players score points by voice ("rojo", "verde") or by tapping. ES is the main and tested language; CA and EN are translations.
 
 Decisions taken with Guille on 2026-11-06 in the planning session. The shell is copied from `grojasv/gym-coach`.
 
@@ -106,7 +106,8 @@ Everything below is remembered between matches.
 - Uses Web Speech `SpeechRecognition` / `webkitSpeechRecognition`, `continuous` + `interimResults`, in the language of the UI.
 - **Commands** (ES / CA / EN). A point needs the colour word alone, or with "punto"/"punt"/"point":
   - point red: `rojo` / `vermell` / `red`
-  - point blue: `azul` / `blau` / `blue` / `turquesa` (added 2026-11-12: on court "azul" scored by voice 49% of blue points vs 68% for "rojo"; a word with hard T and K sounds should carry better, to be checked in the next heard log)
+  - point for the second team (id `blue`, shown **green** since 0.9.0, Guille 2026-11-12): `verde` / `verd` / `green`, plus the old `azul` / `blau` / `blue` and `turquesa`. Near misses for verde in `LOOSE` ("berde", "verdi", "verte"…).
+  - Why: `turquesa` was added in 0.8.2 (2026-11-12) because on court "azul" scored by voice 49% of blue points vs 68% for "rojo"; a word with hard T and K sounds should carry better, to be checked in the next heard log)
   - undo: `deshacer`, `anula` / `desfés`, `anul·la` / `undo`, `cancel`. Not "error" or "atrás": players say those during play.
   - repeat score: `marcador` / `marcador` / `score`
   - pause: `pausa` / `pausa` / `pause`

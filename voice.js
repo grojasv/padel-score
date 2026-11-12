@@ -10,20 +10,20 @@
   // the app is in English, because "red" is Spanish for the net ("¡a la red!").
   const WORDS = {
     red: ['rojo', 'roja', 'rojos', 'vermell', 'vermella', 'bermell'],
-    // turquesa (Guille, 2026-11-12): "azul" starts soft and was missed far more than "rojo" on court. A word
-    // with hard T and K sounds carries better; azul keeps working.
-    blue: ['azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao', 'turquesa', 'turquesas', 'turquoise'],
+    // The second team (id 'blue') is green since 0.9.0 (Guille, 2026-11-12): "azul" was missed far more than "rojo"
+    // on court. verde is the word now; azul and turquesa (0.8.2) keep working.
+    blue: ['verde', 'verdes', 'verd', 'verda', 'green', 'azul', 'azules', 'asul', 'azur', 'blau', 'blava', 'blao', 'turquesa', 'turquesas', 'turquoise'],
     undo: ['deshacer', 'deshaz', 'anula', 'anular', 'desfes', 'desfer', 'anulla', 'undo', 'cancel'],
     score: ['marcador', 'resultado', 'score'],
     pause: ['pausa', 'pause'],
   };
-  const EN_WORDS = { red: ['red'], blue: ['blue', 'blew'] };
+  const EN_WORDS = { red: ['red'], blue: ['blue', 'blew', 'grin', 'greene'] };
   const PHRASES = { blue: ['a sul', 'a zul', 'a sur', 'ha sul', 'as ul'] }; // two-token near misses for "azul"
   // What Chrome writes for a colour shouted from the far end of the court. Normal mode only: strict mode is for
   // noisy courts, where a near miss must not score.
   const LOOSE = {
     red: ['rollo', 'royo', 'rocho', 'roxo', 'rogo', 'rojito', 'rojas', 'vermel', 'vermey', 'bermey', 'bermello'],
-    blue: ['asur', 'hazul', 'azull', 'azu', 'abul', 'azure', 'asules', 'blaus', 'blaw', 'blou', 'turkesa', 'turquese', 'turquessa', 'turqueza'],
+    blue: ['asur', 'hazul', 'azull', 'azu', 'abul', 'azure', 'asules', 'blaus', 'blaw', 'blou', 'berde', 'berdes', 'verdi', 'verte', 'birde', 'werde', 'herde', 'vert', 'turkesa', 'turquese', 'turquessa', 'turqueza'],
   };
   const POINT = ['punto', 'punt', 'point', 'puntos', 'punts'];
 

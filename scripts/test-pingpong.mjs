@@ -110,7 +110,7 @@ test('calls: server first, iguales, game, match', () => {
   r = play(base(), game('r'));
   assert.equal(P.call(r.state, r.events, 'es', 'red'), 'Juego rojo. uno cero, rojo. Cambio de campo');
   r = play(base({ bestOf: 1 }), game('b'));
-  assert.equal(P.call(r.state, r.events, 'en', 'blue'), 'Match to blue. zero eleven');
+  assert.equal(P.call(r.state, r.events, 'en', 'blue'), 'Match to green. zero eleven');
 });
 
 test('stop, reopen, adjust', () => {

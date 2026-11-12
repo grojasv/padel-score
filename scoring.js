@@ -242,7 +242,7 @@
     en: ['love', 'fifteen', 'thirty', 'forty'],
   };
   const W = {
-    team: { es: { red: 'rojo', blue: 'azul' }, ca: { red: 'vermell', blue: 'blau' }, en: { red: 'red', blue: 'blue' } },
+    team: { es: { red: 'rojo', blue: 'verde' }, ca: { red: 'vermell', blue: 'verd' }, en: { red: 'red', blue: 'green' } }, // the blue team is shown green
     all: { es: 'iguales', ca: 'iguals', en: 'all' },
     deuce: { es: 'Iguales', ca: 'Iguals', en: 'Deuce' },
     adv: { es: 'Ventaja {t}', ca: 'Avantatge {t}', en: 'Advantage {t}' },

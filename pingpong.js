@@ -170,7 +170,7 @@
   // ---------- spoken calls (ES / CA / EN) ----------
   const NUM = base.NUM;
   const W = {
-    team: { es: { red: 'rojo', blue: 'azul' }, ca: { red: 'vermell', blue: 'blau' }, en: { red: 'red', blue: 'blue' } },
+    team: { es: { red: 'rojo', blue: 'verde' }, ca: { red: 'vermell', blue: 'verd' }, en: { red: 'red', blue: 'green' } }, // the blue team is shown green
     all: { es: 'iguales', ca: 'iguals', en: 'all' },
     game: { es: 'Juego {t}', ca: 'Joc {t}', en: 'Game {t}' },
     match: { es: 'Partido para {t}', ca: 'Partit per a {t}', en: 'Match to {t}' },

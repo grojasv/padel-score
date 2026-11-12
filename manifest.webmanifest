@@ -1,7 +1,7 @@
 {
   "name": "Padel Score · Bolo",
   "short_name": "Padel Score",
-  "description": "Bolo te lleva el marcador de pádel y tenis: canta los puntos y escucha «rojo» o «azul».",
+  "description": "Bolo te lleva el marcador de pádel y tenis: canta los puntos y escucha «rojo» o «verde».",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

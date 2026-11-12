@@ -2,6 +2,14 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.9.0] - 2026-11-12
+### Changed
+- **Blue is now green.** The second team is «Verde» (Verd, Green) on every screen, in Bolo's calls and in the help. «Verde» is easier for the phone to recognise than «azul». The green (#0f8a3c, white text 4.45:1) is a little darker than the red, so the white numbers stand out on both. Saved matches and history keep working: inside the app the team is still `blue`.
+- **Voice:** «verde», «verd», «green» and near misses («berde», «verdi», «verte»…) score for green. «Azul» and «turquesa» still work.
+- **Bigger scoreboard.** The numbers use Oswald, a tall, narrow scoreboard font, so they can be taller in the same width: the points are about 20% taller (265 px instead of 218 at 844×390), and games, names and the summary numbers are bigger too.
+### Tested
+- `test-voice.mjs`: 59 tests (verde, verd, green, berde, strict «punto verde», azul still works). In the browser: no overflow with «AD» and «40» at 568×320, 844×390, 1280×800 and 390×844; Bolo says «Ventaja verde»; the summary shows «Juego verde».
+
 ## [0.8.2] - 2026-11-12
 ### Changed
 - **Say «turquesa» for a blue point.** In the last match «azul» scored only 49% of blue points by voice (31 of 63; the rest by tap or band) against 68% for «rojo». The missed «azul»s left nothing in the heard log, so more near-miss spellings would not help: «turquesa» has hard T and K sounds that should carry from the far end. «Azul» keeps working. Strict mode: «punto turquesa». The Ajustes help says it.
