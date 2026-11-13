@@ -265,9 +265,28 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-games small { font-size: 0.3em; font-weight: 600; text-transform: uppercase; opacity: 0.85; vertical-align: middle; }
 .centre {
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px;
-  padding: 6px 6px; background: #0b1530; position: relative; min-height: 0;
+  padding: 6px 6px; position: relative; min-height: 0;
+  /* The band is the net: a mesh on the dark, and each side fades into the colour of the half next to it
+     (--net-a is the first half on screen, --net-b the second: they swap with "swap sides"). */
+  --net-bg: #0b1530; --net-dir: 90deg;
+  background:
+    linear-gradient(var(--net-dir), var(--net-a) 0, transparent 26%, transparent 74%, var(--net-b) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.075) 0 1.5px, transparent 1.5px 8px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.075) 0 1.5px, transparent 1.5px 8px),
+    var(--net-bg);
 }
-.c-top { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: 100%; }
+.h-red + .centre { --net-a: var(--red-dark); --net-b: var(--blue-dark); }
+.h-blue + .centre { --net-a: var(--blue-dark); --net-b: var(--red-dark); }
+/* The clock and the mic sit on the net's white tape. */
+.c-top {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: none;
+  align-self: stretch; margin: -6px -6px 0; padding: 3px 6px; background: #f4f6fb; color: #0b1530;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), inset 0 -2px 0 #c9d2e6;
+}
+.c-top .m-clock.low { color: #c1121f; }
+.c-top .mic::after { border-color: #f4f6fb; }
+/* Bolo rests in a soft hollow of the net, and the two buttons are tied to it with the same white cord. */
+.centre .bolo-wrap::before { content: ''; position: absolute; inset: -22%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(11, 21, 48, 0.9) 35%, rgba(11, 21, 48, 0) 70%); }
 .m-clock { font-weight: 800; font-size: clamp(14px, min(7vh, 3.6vw), 48px); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .m-clock.long { font-size: clamp(13px, min(5.5vh, 2.6vw), 36px); } /* 1:30:00: smaller, the clock is not the point */
 .m-clock.limit::before { content: '⏳ '; font-size: 0.7em; }
@@ -300,17 +319,17 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   border: 0; border-radius: clamp(14px, 3.5vh, 26px); cursor: pointer; width: 100%;
   padding: clamp(6px, 2vh, 18px) 4px clamp(4px, 1.4vh, 12px); display: flex; flex-direction: column; align-items: center; gap: 0;
   color: #1a1400; background: linear-gradient(180deg, #ffe066, var(--gold) 55%, #e6a800);
-  box-shadow: 0 clamp(3px, 0.9vh, 7px) 0 #a87a00, 0 8px 18px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2px #f4f6fb, 0 clamp(3px, 0.9vh, 7px) 0 2px #a87a00, 0 8px 18px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.6);
   transition: transform 0.08s, box-shadow 0.08s;
 }
 .ic { width: 1em; height: 1em; display: block; flex: none; }
 .undo-big span { font-size: clamp(26px, 10vh, 68px); line-height: 1; }
 .undo-big .ic { stroke-width: 2.6; }
 .undo-big small { font-size: clamp(10px, 3.4vh, 20px); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-.undo-big:active { transform: translateY(clamp(3px, 0.9vh, 7px)); box-shadow: 0 0 0 #a87a00, 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.6); }
+.undo-big:active { transform: translateY(clamp(3px, 0.9vh, 7px)); box-shadow: 0 0 0 2px #f4f6fb, 0 0 0 2px #a87a00, 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.6); }
 .undo-big:disabled { filter: grayscale(1) brightness(0.55); box-shadow: none; cursor: default; }
 .more {
-  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: #fff; cursor: pointer;
+  border: 2px solid #f4f6fb; border-radius: 999px; background: rgba(11, 21, 48, 0.75); color: #fff; cursor: pointer;
   font-size: clamp(14px, 4.4vh, 24px); padding: clamp(3px, 0.9vh, 8px) 0; opacity: 0.85; display: flex; justify-content: center;
 }
 .more[aria-expanded="true"] { background: #fff; color: #0b1530; opacity: 1; }
@@ -365,8 +384,8 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   .h-name { font-size: clamp(14px, 5vw, 24px); }
   .h-games { font-size: clamp(20px, 12vw, 56px); }
   .h-serve { font-size: clamp(14px, 5vw, 26px); }
-  .centre { display: grid; grid-template-columns: 70px 1fr; grid-template-areas: 'bolo top' 'bolo sets' 'bolo badge' 'tools tools' 'bubble bubble' 'hint hint'; align-items: center; gap: 4px 10px; padding: 6px 10px; }
-  .c-top { grid-area: top; } .sets { grid-area: sets; } .m-badge { grid-area: badge; text-align: left; }
+  .centre { --net-dir: 180deg; display: grid; grid-template-columns: 70px 1fr; grid-template-areas: 'bolo top' 'bolo sets' 'bolo badge' 'tools tools' 'bubble bubble' 'hint hint'; align-items: center; gap: 4px 10px; padding: 6px 10px; }
+  .c-top { grid-area: top; align-self: center; justify-self: start; margin: 0; padding: 2px 12px; border-radius: 999px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); } .sets { grid-area: sets; } .m-badge { grid-area: badge; text-align: left; }
   .centre .bolo-wrap { grid-area: bolo; width: 70px; padding-top: 14px; }
   .c-tools { grid-area: tools; }
   .m-bubble { grid-area: bubble; }
@@ -457,7 +476,8 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   :root[data-sport="pingpong"]:not([data-theme="light"]) { --bg: #1e130b; --bg2: #352010; --card: #3a2614; --line: #5c3b1d; --muted: #d4b498; }
 }
 :root[data-sport="pingpong"][data-theme="dark"] { --bg: #1e130b; --bg2: #352010; --card: #3a2614; --line: #5c3b1d; --muted: #d4b498; }
-:root[data-sport="pingpong"] .match, :root[data-sport="pingpong"] .centre { background: #10131c; }
+:root[data-sport="pingpong"] .match { background: #10131c; }
+:root[data-sport="pingpong"] .centre { --net-bg: #10131c; }
 .sport { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; margin: 4px 0 6px; background: var(--card); border: 2px solid var(--line); border-radius: 18px; }
 .sport button {
   display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 13px; padding: 12px 8px; cursor: pointer;

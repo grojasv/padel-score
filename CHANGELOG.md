@@ -2,6 +2,10 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.11.1] - 2026-11-13
+### Changed
+- **The middle band of the scoreboard is the net.** It has a mesh pattern and each side fades into the colour of the half next to it, so it no longer looks like a separate box. The clock and the mic sit on the net's white tape, Bolo rests in a soft hollow of the mesh, and the undo and ••• buttons have the same white edge.
+
 ## [0.11.0] - 2026-11-13
 ### Added
 - **Intro.** When the app opens, Bolo drops in like a ball, squashes on the bounce and the title pops in letter by letter (about 1 s, once per app open, a tap skips it).
