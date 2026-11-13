@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const lines = JSON.parse(readFileSync(join(root, 'data', 'lines.json'), 'utf8'));
-const KEYS = ['hello', 'start', 'game', 'set', 'setPoint', 'matchPoint', 'finish', 'draw', 'timeWarn', 'lastGame', 'paused', 'resumed', 'ppHello', 'ppGame', 'ppFinish'];
+const KEYS = ['hello', 'start', 'game', 'set', 'setPoint', 'matchPoint', 'finish', 'draw', 'timeWarn', 'lastGame', 'paused', 'resumed', 'ppHello', 'ppGame', 'ppFinish', 'streak'];
 const LANGS = ['es', 'ca', 'en'];
 const errors = [];
 

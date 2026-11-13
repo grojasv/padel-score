@@ -50,6 +50,16 @@ body {
 }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
+/* Faint court lines behind the hub: the outer lines, the net, the two service lines and the centre line. */
+body::before {
+  content: ''; position: fixed; inset: 10px; z-index: -1; pointer-events: none; border: 3px solid var(--line); border-radius: 4px; opacity: 0.6;
+  background:
+    linear-gradient(var(--line), var(--line)) 0 50% / 100% 5px no-repeat,
+    linear-gradient(var(--line), var(--line)) 0 22% / 100% 3px no-repeat,
+    linear-gradient(var(--line), var(--line)) 0 78% / 100% 3px no-repeat,
+    linear-gradient(var(--line), var(--line)) 50% 50% / 3px 56% no-repeat;
+}
+body.playing::before { display: none; }
 
 /* ---------- header ---------- */
 .top {
@@ -88,16 +98,49 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 }
 .power-flash { position: fixed; inset: 0; z-index: 50; pointer-events: none; background: radial-gradient(circle, #fff 0%, #ffe066 45%, #ffcf24 100%); opacity: 0; animation: powerflash 0.7s ease-out; }
 @keyframes powerflash { 0% { opacity: 0.95; } 25% { opacity: 0; } 45% { opacity: 0.8; } 100% { opacity: 0; } }
-@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes bob { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-6px) scale(1.02, 0.985); } }
+.bolo-eyes { transform-box: view-box; transform-origin: 100px 147px; animation: blink-eyes 4.6s infinite; }
+@keyframes blink-eyes { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
 @keyframes squash {
   0% { transform: scale(1, 1); } 25% { transform: scale(1.18, 0.82); } 55% { transform: translateY(-14px) scale(0.92, 1.1); } 100% { transform: scale(1, 1); }
 }
 @keyframes talk { from { transform: scaleY(1); } to { transform: scaleY(0.55); } }
 @keyframes aura { from { opacity: 0.25; } to { opacity: 0.7; } }
 @media (prefers-reduced-motion: reduce) {
-  .bolo-wrap.idle .bolo-body, .bolo-wrap.bounce .bolo-body, .bolo-aura, .bolo-sparks, .centre .bolo-wrap.powering { animation: none; }
-  .power-flash { display: none; }
+  .bolo-wrap.idle .bolo-body, .bolo-wrap.bounce .bolo-body, .bolo-aura, .bolo-sparks, .centre .bolo-wrap.powering, .bolo-eyes,
+  .r-old, .r-new, .half.scored::after, .h-games b.pop, .h-streak, .centre .bolo-wrap.onfire::after { animation: none; }
+  .r-old, .half.scored::after { display: none; }
+  .power-flash, .fx-confetti, .fx-court { display: none; }
 }
+
+/* ---------- intro: once per app open (app.js adds .intro to <html> for under 2 s; a tap removes it) ---------- */
+.brand i { font-style: normal; display: inline-block; }
+.intro .brand i { animation: letter-in 0.4s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: calc(var(--i) * 45ms); }
+.intro .hero .bolo-wrap { animation: drop-in 0.95s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 100%; }
+.intro .bubble { animation: pop-in 0.35s cubic-bezier(.3, 1.5, .5, 1) 0.75s both; transform-origin: 0 50%; }
+.intro .langs, .intro .sport, .intro .actions > *, .intro .sec, .intro .history, .intro .empty, .intro .foot { animation: rise 0.4s ease-out both; }
+.intro .sport { animation-delay: 0.3s; }
+.intro .actions > * { animation-delay: 0.9s; } .intro .actions > * + * { animation-delay: 1s; } .intro .actions > * + * + * { animation-delay: 1.1s; }
+.intro .sec, .intro .history, .intro .empty, .intro .foot { animation-delay: 1.2s; }
+@keyframes letter-in { from { transform: translateY(-14px) scale(0.3) rotate(-12deg); opacity: 0; } }
+@keyframes drop-in {
+  0% { transform: translateY(-110vh) scale(0.9, 1.1); } 45% { transform: translateY(0) scale(1.22, 0.78); }
+  62% { transform: translateY(-34px) scale(0.95, 1.06); } 78% { transform: translateY(0) scale(1.08, 0.92); } 100% { transform: none; }
+}
+@keyframes pop-in { from { transform: scale(0.4); opacity: 0; } }
+@keyframes rise { from { transform: translateY(16px); opacity: 0; } }
+
+/* ---------- effects layers (fx.js): over everything, never in the way of a tap ---------- */
+.fx-confetti, .fx-court { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.fx-confetti i { position: absolute; top: -24px; border-radius: 2px; animation: confetti-fall var(--t) cubic-bezier(.2, .6, .6, 1) var(--d) forwards; }
+@keyframes confetti-fall { 85% { opacity: 1; } to { transform: translate3d(var(--dx), 112vh, 0) rotate(var(--rot)); opacity: 0; } }
+.fx-court { animation: fx-out 0.35s ease-in 1.55s forwards; }
+.fx-court svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fx-court path { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0.9; animation: fx-draw 0.6s ease-out calc(var(--i) * 0.09s) forwards; }
+@keyframes fx-draw { to { stroke-dashoffset: 0; } }
+@keyframes fx-out { to { opacity: 0; } }
+.fx-ball { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; opacity: 0; background: radial-gradient(circle at 35% 30%, #f4ff9c, #dcef3a 55%, #a9c21a); box-shadow: 0 0 0 3px #1d1a12, 0 8px 14px rgba(0, 0, 0, 0.4); }
+.fx-ball.pp { background: radial-gradient(circle at 35% 30%, #ffc27a, #ff8a1f 55%, #d9590a); }
 
 /* ---------- hub ---------- */
 .hero { display: grid; grid-template-columns: minmax(120px, 190px) 1fr; align-items: center; gap: 12px; margin: 8px 0 16px; }
@@ -124,17 +167,24 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 .sec { font-family: Bungee, Rubik, sans-serif; font-weight: 400; font-size: 18px; margin: 8px 0 10px; }
 .card { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); }
 .empty { color: var(--muted); text-align: center; padding: 16px; }
-.history { list-style: none; margin: 0; padding: 0; }
-.history li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
-.history li:first-child { border-top: 0; }
-.h-date, .h-teams { grid-column: 1 / -1; }
+/* History: one scorecard per match. A row per team with a box per set; the winner's colour is on the left edge. */
+.history { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.history li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 12px; background: var(--card); border: 2px solid var(--line); border-left: 8px solid var(--line); border-radius: var(--radius); }
+.history li.w-red { border-left-color: var(--red); } .history li.w-blue { border-left-color: var(--blue); }
 .h-date { color: var(--muted); font-size: 13px; }
-.h-score { white-space: nowrap; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
-.h-score sup { font-size: 10px; }
-.h-teams { font-size: 15px; }
+.h-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 16px; }
+.h-row > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.h-row.won > b { font-weight: 800; }
+.h-sets { display: flex; gap: 4px; flex: none; font-family: Oswald, Rubik, sans-serif; font-weight: 700; font-size: 20px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.h-sets i { font-style: normal; min-width: 1.7em; text-align: center; border-radius: 6px; background: var(--bg); color: var(--muted); }
+.h-row.won .h-sets i { background: var(--ink); color: var(--card); }
+.h-sets sup { font-size: 0.55em; }
+.h-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 8px; }
+.h-foot .btn { flex-direction: row; }
+.h-voice { margin-right: auto; font-size: 13px; }
 .t-red { color: var(--red); } .t-blue { color: var(--blue); }
-.tag { justify-self: end; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line); }
-.tag.c-red { background: var(--red); color: #fff; } .tag.c-blue { background: var(--blue); color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .t-red { color: #ff8a93; } :root:not([data-theme="light"]) .t-blue { color: #4ade80; } }
+:root[data-theme="dark"] .t-red { color: #ff8a93; } :root[data-theme="dark"] .t-blue { color: #4ade80; }
 
 /* ---------- setup ---------- */
 .back { display: inline-block; margin: 4px 0 10px; text-decoration: none; font-weight: 700; color: var(--muted); }
@@ -191,6 +241,25 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .half.serving { box-shadow: inset 0 0 0 clamp(6px, 1.8vh, 16px) var(--serve); }
 .h-points { font-weight: 700; font-size: clamp(80px, min(64vh, 35vw), 760px); line-height: 0.95; font-variant-numeric: tabular-nums; text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); }
 .h-points.adv { color: var(--gold); }
+/* A point: the old number slides out and the new one in (down for an undo), and the half that scored flashes. */
+.h-points { position: relative; }
+.h-points i { display: block; font-style: normal; }
+.r-old { position: absolute; inset: 0; animation: roll-out 0.26s ease-in forwards; }
+.r-old::before { content: attr(data-v); }
+.r-new { animation: roll-in 0.3s cubic-bezier(.2, 1.5, .4, 1); }
+.h-points.down .r-old { animation-name: roll-out-down; } .h-points.down .r-new { animation-name: roll-in-down; }
+@keyframes roll-in { from { transform: translateY(45%) scaleY(0.7); opacity: 0; } }
+@keyframes roll-out { to { transform: translateY(-45%) scaleY(0.7); opacity: 0; } }
+@keyframes roll-in-down { from { transform: translateY(-45%) scaleY(0.7); opacity: 0; } }
+@keyframes roll-out-down { to { transform: translateY(45%) scaleY(0.7); opacity: 0; } }
+.half.scored::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 70%); animation: scored 0.45s ease-out forwards; }
+@keyframes scored { from { opacity: 1; } to { opacity: 0; } }
+.h-games b.pop { display: inline-block; animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pop { from { transform: scale(1.9); color: var(--gold); } }
+/* 3 or more points in a row: a flame with the count in the corner of that half, and one on Bolo. */
+.h-streak { position: absolute; right: clamp(10px, 3vh, 24px); bottom: clamp(10px, 3vh, 24px); font-weight: 800; font-size: clamp(14px, 6vh, 40px); line-height: 1; white-space: nowrap; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); animation: pop 0.4s cubic-bezier(.3, 1.6, .5, 1); }
+.centre .bolo-wrap.onfire::after { content: '🔥'; position: absolute; right: -22%; top: -8%; font-size: clamp(14px, 6vh, 30px); line-height: 1; animation: flicker 0.5s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+@keyframes flicker { from { transform: scale(0.9) rotate(-6deg); } to { transform: scale(1.15) rotate(6deg); } }
 .h-games { font-size: clamp(22px, 17vh, 150px); line-height: 1.1; font-weight: 800; background: rgba(0, 0, 0, 0.3); padding: 0 0.4em; border-radius: 0.3em; font-variant-numeric: tabular-nums; }
 .h-games b { font-weight: 700; }
 .h-games small { font-size: 0.3em; font-weight: 600; text-transform: uppercase; opacity: 0.85; vertical-align: middle; }
@@ -323,7 +392,6 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-list li.o-none { opacity: 0.7; } .h-list li.tap { color: #8ab8ff; }
 .h-box .btn { color: #fff; border-color: #fff; background: transparent; }
 .h-box .btn.go { background: var(--go); }
-.history .h-heard { grid-column: 1 / -1; justify-self: start; }
 
 /* Bolo celebrates beside the result (landscape), above it (portrait). */
 .m-finish { flex-direction: row; gap: 16px; }
@@ -362,7 +430,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 @keyframes sumin { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
 .s-title { font-family: Bungee, Rubik, sans-serif; font-size: clamp(28px, 12vh, 110px); line-height: 1; text-transform: uppercase; }
 .s-title.c-red { color: #ff6b76; } .s-title.c-blue { color: #4ade80; }
-.s-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 2vw; width: min(100%, 1100px); }
+.s-teams { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2vw; width: min(100%, 1100px); }
 .s-team { display: flex; flex-direction: column; align-items: center; border-radius: 3vh; padding: 0.5vh 1vw; border: clamp(4px, 1.2vh, 12px) solid transparent; }
 .s-team.c-red { background: var(--red); } .s-team.c-blue { background: var(--blue); }
 .s-team.won { border-color: #fff; }
@@ -373,7 +441,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .s-serve { font-size: clamp(16px, 6.5vh, 54px); font-weight: 800; }
 .m-finish .playon { font-weight: 800; margin-top: 4px; }
 @media (orientation: portrait) {
-  .s-teams { grid-template-columns: 1fr; gap: 1vh; }
+  .s-teams { grid-template-columns: minmax(0, 1fr); gap: 1vh; }
   .s-team b { font-size: clamp(56px, 16vh, 200px); }
   /* sized by width: by height, «Cambio de campo» wrapped to 3 lines and ran off a tall phone */
   .s-title { font-size: clamp(22px, 9vw, 64px); text-align: center; }

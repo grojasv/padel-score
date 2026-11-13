@@ -26,6 +26,7 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 - `match.js`: the scoreboard screen. Taps, undo stack, edit panel, clock, voice out, wake lock.
 - `voice.js`: speech recognition loop and command matching.
 - `mascot.js`: Bolo as SVG (`Bolo.svg(mood)`, `Bolo.head()`), UMD.
+- `fx.js`: effects that never block a tap (`pointer-events: none`): `Fx.buzz`, `Fx.confetti(team, n)`, `Fx.courtIntro` at match start, `Fx.card` / `Fx.share` (the 1080×1080 result image). All motion is off under `prefers-reduced-motion`.
 - `data/lines.json`: Bolo's line pools (ES/CA/EN).
 - `scripts/test-scoring.mjs` and `scripts/test-voice.mjs`: node tests for the engine and the command matcher. `scripts/validate.mjs`: checks `lines.json` (3 languages, word limit). `scripts/test-browser.mjs`: real matches in Chromium at the 4 phone sizes. `scripts/make-icons.mjs`.
 
@@ -34,6 +35,7 @@ Decisions taken with Guille on 2026-11-06 in the planning session. The shell is 
 - Big **Nuevo partido** button → setup (pre-filled with the saved defaults) → **Empezar** (this tap unlocks audio, mic and wake lock).
 - If a match is in progress (saved in localStorage), a **Continuar partido** button is shown. A page reload never loses a match.
 - History: the last matches (date, teams, set scores, duration, winner or draw). Kept in `padel-score.log`, newest first, 100 max.
+- Since 0.11.0: an intro once per app open (`sessionStorage padel-score.intro`; Bolo drops in, a tap skips it), faint court lines behind the hub, each history match as a scorecard with a **Compartir** button, and Bolo blinks and follows the finger. On the scoreboard: rolling numbers, a flash on the half that scored, vibration, a flame from 3 points in a row (counted from `m.src`, so an undo shortens it; Bolo says it at 5), confetti for game, set and match.
 
 ## Setup (saved as defaults in `padel-score.setup`)
 Split since v0.4.0:

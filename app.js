@@ -1,7 +1,7 @@
 // Padel Score: the hub (Bolo, new match, setup, history) and the shell (languages, install, footer).
 // No build step. The scoreboard lives in match.js, the rules in scoring.js, voice input in voice.js, Bolo in mascot.js.
 (() => {
-  const VERSION = '0.10.0'; // keep in sync with CHANGELOG.md
+  const VERSION = '0.11.0'; // keep in sync with CHANGELOG.md
   const LANGS = ['es', 'ca', 'en'];
   const KEY = { lang: 'padel-score.lang', setup: 'padel-score.setup', current: 'padel-score.current', log: 'padel-score.log' };
 
@@ -103,7 +103,10 @@
     document.documentElement.dataset.sport = sport === 'pingpong' ? 'pingpong' : 'padel';
     Bolo.sport = sport === 'pingpong' ? 'pingpong' : 'padel';
     const brand = document.querySelector('.brand span');
-    if (brand) brand.innerHTML = `${sport === 'pingpong' ? 'Ping pong' : 'Padel'} <b>Score</b>`;
+    // One <i> per letter: they pop in one by one in the intro.
+    let k = 0;
+    const letters = (word) => [...word].map((c) => (c === ' ' ? ' ' : `<i style="--i:${k++}">${c}</i>`)).join('');
+    if (brand) brand.innerHTML = `${letters(sport === 'pingpong' ? 'Ping pong' : 'Padel')} <b>${letters('Score')}</b>`;
   }
   const TIMES = [0, 45, 60, 75, 90, 120];
 
@@ -120,7 +123,8 @@
   const $ = (id) => document.getElementById(id);
   const view = $('view'), matchEl = $('match'), foot = $('foot');
   let lines = {};
-  let match = null;
+  let match = null, heroTimer = null;
+  const Fx = window.Fx;
 
   const loadSetup = () => {
     const s = { ...DEFAULT_SETUP, ...readJSON(KEY.setup, {}) };
@@ -147,6 +151,31 @@
     w.style.setProperty('--look-y', `${(dy / d) * 4}px`);
   }
   document.addEventListener('pointerdown', lookAt);
+  document.addEventListener('pointermove', (e) => { if (!match) lookAt(e); }, { passive: true });
+
+  // ---------- intro: once per app open, Bolo drops in and the hub pops into place (style.css, .intro) ----------
+  // A tap skips it and still does what it was meant to do. Not shown with "reduce motion" or when a match is open.
+  function playIntro() {
+    let seen = true;
+    try { seen = !!sessionStorage.getItem('padel-score.intro'); sessionStorage.setItem('padel-score.intro', '1'); } catch { /* private mode: no intro */ }
+    if (seen || Fx.calm() || /^#\/(match|setup|settings)/.test(location.hash)) return;
+    const root = document.documentElement;
+    const end = () => { root.classList.remove('intro'); document.removeEventListener('pointerdown', end, true); };
+    root.classList.add('intro');
+    document.addEventListener('pointerdown', end, true);
+    setTimeout(end, 1800);
+  }
+  // The data of the share card (fx.js) for a match in the history.
+  function cardOf(e) {
+    const cols = e.sets.map((x) => (x.kind === 'stb' ? { red: x.tb.red, blue: x.tb.blue } : { red: x.red, blue: x.blue }));
+    if (e.endedBy !== 'score' && !isPP(e.setup) && e.games && (e.games.red || e.games.blue)) cols.push({ red: e.games.red, blue: e.games.blue });
+    return {
+      sport: isPP(e.setup) ? 'pingpong' : 'padel', winner: e.winner, cols, red: teamName(e.setup, 'red'), blue: teamName(e.setup, 'blue'),
+      title: e.winner === 'draw' ? t(Match.TEXT.draw) : t(Match.TEXT.winner).replace('{t}', teamName(e.setup, e.winner)),
+      date: new Intl.DateTimeFormat({ es: 'es-ES', ca: 'ca-ES', en: 'en-GB' }[lang], { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(e.at)),
+      meta: `${Math.max(1, e.minutes)} min`,
+    };
+  }
 
   // ---------- views ----------
   function renderHub() {
@@ -170,21 +199,38 @@
         <a class="btn ghost small" href="#/settings">⚙️ ${esc(t(TEXT.settings))}</a>
       </div>
       <h2 class="sec">${esc(t(TEXT.history))}</h2>
-      ${log.length ? `<ul class="card history">${log.map((e, i) => {
-        const sets = e.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${x.tb ? `<sup>${Math.min(x.tb.red, x.tb.blue)}</sup>` : ''}`))
-          .concat(e.endedBy !== 'score' && e.games && (e.games.red || e.games.blue) ? [`${e.games.red}-${e.games.blue}`] : []).join(' ');
-        const w = e.winner === 'draw' ? `<span class="tag">${esc(t(TEXT.drawn))}</span>` : `<span class="tag c-${e.winner}">${esc(teamName(e.setup, e.winner))} ${esc(t(TEXT.won))}</span>`;
-        return `<li><span class="h-date">${esc(dateFmt(e.at))} · ${e.minutes} min</span>
-          <span class="h-teams">${isPP(e.setup) ? '🏓' : '🎾'} <b class="t-red">${esc(teamName(e.setup, 'red'))}</b> – <b class="t-blue">${esc(teamName(e.setup, 'blue'))}</b></span>
-          <span class="h-score">${sets || '–'}</span>${w}
-          ${voicePct(e)}
-          ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}</li>`;
+      ${log.length ? `<ul class="history">${log.map((e, i) => {
+        // A scorecard: one row per team with a box per set, the winner's row in bold and its colour on the edge.
+        const cols = e.sets.map((x) => (x.kind === 'stb' ? { red: x.tb.red, blue: x.tb.blue } : { red: x.red, blue: x.blue, tb: x.tb }))
+          .concat(e.endedBy !== 'score' && !isPP(e.setup) && e.games && (e.games.red || e.games.blue) ? [{ red: e.games.red, blue: e.games.blue }] : []);
+        const other = (team) => (team === 'red' ? 'blue' : 'red');
+        const row = (team) => `<div class="h-row${e.winner === team ? ' won' : ''}"><b class="t-${team}">${e.winner === team ? '🏆 ' : ''}${esc(teamName(e.setup, team))}</b>
+          <span class="h-sets">${cols.map((c) => `<i>${c[team]}${c.tb && c[team] < c[other(team)] ? `<sup>${c.tb[team]}</sup>` : ''}</i>`).join('') || '<i>–</i>'}</span></div>`;
+        return `<li class="w-${e.winner}"><span class="h-date">${isPP(e.setup) ? '🏓' : '🎾'} ${esc(dateFmt(e.at))} · ${e.minutes} min${e.winner === 'draw' ? ` · ${esc(t(TEXT.drawn))}` : ''}</span>
+          ${row('red')}${row('blue')}
+          <div class="h-foot">${voicePct(e)}
+          ${e.heard?.length ? `<button class="btn small ghost h-heard" data-heard="${i}" type="button">🎙 ${esc(t(Match.TEXT.heard))}</button>` : ''}
+          <button class="btn small ghost h-share" data-share="${i}" type="button">📤 ${esc(t(Match.TEXT.share))}</button></div></li>`;
       }).join('')}</ul>` : `<p class="empty">${esc(t(isPP(setupNow) ? TEXT.noHistoryPP : TEXT.noHistory))}</p>`}`;
     view.querySelectorAll('[data-sport]').forEach((b) => b.addEventListener('click', () => {
       store.set(KEY.setup, JSON.stringify({ ...loadSetup(), sport: b.dataset.sport }));
       renderHub();
     }));
-    $('heroBolo').addEventListener('click', (e) => { const m = e.currentTarget; m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce'); });
+    // A tap on Bolo: he jumps, cheers for a moment and says another line.
+    $('heroBolo').addEventListener('click', (e) => {
+      const m = e.currentTarget;
+      m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce');
+      m.innerHTML = Bolo.svg('cheer');
+      clearTimeout(heroTimer);
+      heroTimer = setTimeout(() => { if (m.isConnected) m.innerHTML = Bolo.svg('happy'); }, 900);
+      if (pool?.length > 1) {
+        const b = view.querySelector('.bubble');
+        let next = b.textContent;
+        while (next === b.textContent) next = pool[Math.floor(Math.random() * pool.length)];
+        b.textContent = next;
+      }
+    });
+    view.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => Fx.share(cardOf(log[Number(b.dataset.share)]))));
     $('continueBtn')?.addEventListener('click', () => { Match.unlock({ mic: !!cur.setup.voiceInput, remote: !!cur.setup.remote }); location.hash = '#/match'; });
     view.querySelectorAll('[data-heard]').forEach((b) => b.addEventListener('click', () => {
       const e = log[Number(b.dataset.heard)];
@@ -472,5 +518,5 @@
   }
 
   fetch('data/lines.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
-    .then((l) => { lines = l; setLang(lang); });
+    .then((l) => { lines = l; playIntro(); setLang(lang); });
 })();

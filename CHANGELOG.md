@@ -2,6 +2,25 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.11.0] - 2026-11-13
+### Added
+- **Intro.** When the app opens, Bolo drops in like a ball, squashes on the bounce and the title pops in letter by letter (about 1 s, once per app open, a tap skips it).
+- **Match start.** After the Start tap the court lines draw themselves and a ball flies to the server's half. It never blocks a tap.
+- **Rolling numbers.** A point slides the old number out and the new one in (the other way for an undo), the half that scored flashes, and the games number pops.
+- **Vibration** (Android): a short buzz for a point, a double buzz for a game, longer for a set and the match.
+- **Streaks.** 3 or more points in a row show a flame with the count on that half, a flame on Bolo and «¡En racha!». At 5 in a row Bolo says it once.
+- **Confetti** in the winner's colour for a game, more for a set, most for the match.
+- **Share card.** «Compartir» on the finish screen and on each match in the history builds an image (score, names, date, Bolo with a trophy) and opens the phone's share sheet. A desktop browser saves the image.
+- **History as scorecards.** One card per match: a row per team with a box per set, the winner in bold with its colour on the edge.
+- **Bolo is alive on the hub.** He blinks, breathes, follows your finger, and a tap makes him jump, cheer and say another line.
+- **Court lines** behind the hub.
+- All motion is off when the phone asks for reduced motion. New file `fx.js`.
+### Fixed
+- **A long player name pushed the summary between games off the screen.** It is now cut with «…», as on the scoreboard.
+- **History, ping pong match ended early:** the games won showed as one more game («11-9 9-11 1-1»).
+### Tested
+- `test-browser.mjs` also checks the intro (plays once), the court at the start, the rolling number, the flame at 3 in a row and after an undo, confetti for a game and the match, the saved share card, the scorecard, and a long player name at every size.
+
 ## [0.10.0] - 2026-11-12
 ### Added
 - **Voice numbers in the heard log.** At the top: how each team's points were scored (🎙 voice, 👆 tap, ⌚ band, with the share by voice) and how much of the match the mic was really listening. An undone point leaves the count. The history shows the voice share per team on each match («🎙 68% · 49%»), so one match tells whether a word works.

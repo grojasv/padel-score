@@ -1,8 +1,8 @@
 /* Bolo: the Padel Score mascot, a padel ball with spiky hero hair, drawn as inline SVG. Original design.
  * Browser: <script src="mascot.js"></script> then Bolo.svg('happy', { gold: true }).
  * Node:    const Bolo = require('./mascot.js').
- * Moods: idle, happy, fierce, sad, cheer. The app moves <g class="bolo-pupils"> (CSS --look-x/--look-y)
- * and animates <g class="bolo-mouth"> while he speaks. No external assets and no text. */
+ * Moods: idle, happy, fierce, sad, cheer. The app moves <g class="bolo-pupils"> (CSS --look-x/--look-y),
+ * blinks <g class="bolo-eyes"> and animates <g class="bolo-mouth"> while he speaks. No external assets and no text. */
 (function (root) {
   'use strict';
 
@@ -115,7 +115,7 @@
     <path d="M152 100 Q124 140 152 182" fill="none" stroke="${C.seam}" stroke-width="6" stroke-linecap="round"/>`}
     ${bangs(gold)}
     ${brows(mood)}
-    ${eyes(mood, gold)}
+    <g class="bolo-eyes">${eyes(mood, gold)}</g>
     <ellipse cx="62" cy="166" rx="8" ry="5" fill="${C.cheek}" opacity="0.45"/><ellipse cx="138" cy="166" rx="8" ry="5" fill="${C.cheek}" opacity="0.45"/>
     ${mouth(mood)}
     ${gold ? sparks() : ''}

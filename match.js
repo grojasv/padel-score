@@ -63,6 +63,8 @@
     voiceOn: { es: 'Bolo habla', ca: 'En Bolo parla', en: 'Bolo talks' },
     voiceOff: { es: 'Bolo callado', ca: 'En Bolo callat', en: 'Bolo muted' },
     gamePoint: { es: 'Bola de juego', ca: 'Pilota de joc', en: 'Game point' },
+    share: { es: 'Compartir', ca: 'Comparteix', en: 'Share' },
+    streak: { es: '¡En racha!', ca: 'En ratxa!', en: 'On fire!' },
     noCaVoice: { es: '', ca: 'Aquest mòbil no té veu en català: en Bolo parlarà en castellà.', en: '' },
   };
   const VOICE_LANG = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' };
@@ -235,6 +237,17 @@
     let lastTap = 0, listener = null, micState = 'off', flash = null, flashTimer = null, moodTimer = null, tick = null;
     let mood = 'idle', speakTimer = null, closed = false, wasGold = null, poweringUntil = 0, micSince = 0; // null: not painted yet, so no power-up on open
     const lastLine = {};
+    // Effects (fx.js): what the last render showed, so only a real change rolls, and which half just scored.
+    let shown = null, rollDir = 'up', pulse = null;
+    const Fx = window.Fx;
+    // 3 or more points in a row by the same team (from m.src, so an undo or an edit breaks or shortens it).
+    function streak() {
+      const src = m.src || [], last = src[src.length - 1];
+      if (!last) return null;
+      let n = 0;
+      for (let i = src.length - 1; i >= 0 && src[i] && src[i][1] === last[1]; i--) n++;
+      return n >= 3 ? { team: last[1] === 'r' ? 'red' : 'blue', n } : null;
+    }
 
     // Each save also adds the mic's listening time so far, so the numbers are right even mid-stretch.
     const save = () => {
@@ -359,6 +372,10 @@
       markFinished();
       save();
       if (how === 'voice') heardSound(team); else confirmSound(team);
+      const ev = (e) => r.events.includes(e);
+      pulse = { team, until: Date.now() + 450 };
+      Fx?.buzz(ev('match') ? [80, 60, 80, 60, 220] : ev('set') ? [60, 50, 60, 50, 120] : ev('game') ? [40, 60, 40] : 25);
+      if (ev('match')) { if (m.state.winner !== 'draw') Fx?.confetti(m.state.winner, 140); } else if (ev('set')) Fx?.confetti(team, 70); else if (ev('game')) Fx?.confetti(team, 28);
       react(team, r.events);
       if (!r.events.includes('match') && ['game', 'set', 'changeEnds'].some((e) => r.events.includes(e))) showSummary(r.events, team);
       render();
@@ -366,6 +383,7 @@
       if (r.events.includes('match')) {
         text += `. ${line(m.state.winner === 'draw' ? 'draw' : 'finish')}`;
       } else if (r.events.includes('set')) text += `. ${line('set')}`;
+      else if (streak()?.n === 5) text += `. ${line('streak')}`; // said once per streak; the flame shows from 3
       else if (r.events.includes('game') && Math.random() < 0.35) text += `. ${line('game')}`;
       speak(text);
     }
@@ -377,6 +395,8 @@
       markFinished();
       save();
       undoSound();
+      Fx?.buzz([15, 40, 15]);
+      rollDir = 'down';
       setMood('sad', 900);
       render();
       speak(`${t(TEXT.undo)}. ${fullScore()}`);
@@ -510,6 +530,7 @@
       w.innerHTML = Bolo.svg(shown, { gold });
       w.classList.toggle('powered', gold && !m.state.finished);
       w.classList.toggle('powering', Date.now() < poweringUntil); // render() rebuilds the wrap: keep the animation on
+      w.classList.toggle('onfire', !m.state.finished && !!streak());
       if (wasGold === false && gold && !m.state.finished) powerUp(w);
       wasGold = gold;
       if (lookTeam) w.style.setProperty('--look-x', lookTeam === 'red' ? '-4px' : '4px');
@@ -531,7 +552,7 @@
       if (w) { w.classList.remove('bounce'); void w.offsetWidth; w.classList.add('bounce'); }
       const tag = events.includes('match') ? null
         : events.includes('matchPoint') ? TEXT.matchPoint : events.includes('setPoint') ? TEXT.setPoint : events.includes('gamePoint') ? TEXT.gamePoint
-          : events.includes('changeEnds') ? TEXT.change : events.includes('golden') ? TEXT.golden : null;
+          : events.includes('changeEnds') ? TEXT.change : events.includes('golden') ? TEXT.golden : streak() ? TEXT.streak : null;
       flash = tag ? t(tag) : null;
       clearTimeout(flashTimer);
       if (flash) flashTimer = setTimeout(() => { flash = null; render(); }, 4000);
@@ -670,12 +691,19 @@
       const sv = Scoring.server(s);
       const serving = !s.finished && sv.team === team;
       const svName = names(team)[sv.player];
-      const pts = Scoring.display(s)[team];
-      return `<button class="half h-${team}${serving ? ' serving' : ''}" data-team="${team}" type="button" aria-label="${esc(teamLabel(team))}">
+      const pts = String(Scoring.display(s)[team]);
+      const games = s.tiebreak === 'stb' ? '–' : String(s.games[team]);
+      // The old number leaves and the new one comes in. The old one is drawn by CSS (data-v), so the text of
+      // .h-points is always just the score.
+      const was = shown?.[team];
+      const roll = was && was.pts !== pts ? `<i class="r-old" data-v="${esc(was.pts)}" aria-hidden="true"></i><i class="r-new">${esc(pts)}</i>` : esc(pts);
+      const sk = !s.finished && streak();
+      return `<button class="half h-${team}${serving ? ' serving' : ''}${pulse?.team === team && Date.now() < pulse.until ? ' scored' : ''}" data-team="${team}" type="button" aria-label="${esc(teamLabel(team))}">
         <span class="h-name">${esc(teamLabel(team))}</span>
         <span class="h-serve${serving ? '' : ' off'}">${BALL} ${esc(serving ? svName || t(TEXT.server) : t(TEXT.server))}</span>
-        <span class="h-points${pts === 'AD' ? ' adv' : ''}">${esc(pts)}</span>
-        <span class="h-games"><small>${esc(t(TEXT.games))}</small> <b>${s.tiebreak === 'stb' ? '–' : s.games[team]}</b></span>
+        <span class="h-points${pts === 'AD' ? ' adv' : ''}${rollDir === 'down' ? ' down' : ''}">${roll}</span>
+        <span class="h-games"><small>${esc(t(TEXT.games))}</small> <b${was && was.games !== games ? ' class="pop"' : ''}>${games}</b></span>
+        ${sk && sk.team === team ? `<span class="h-streak" aria-hidden="true">🔥 ${sk.n}</span>` : ''}
       </button>`;
     }
     function setsTable() {
@@ -709,6 +737,7 @@
         <p class="final">${s.sets.map((x) => (x.kind === 'stb' ? `${x.tb.red}-${x.tb.blue}` : `${x.red}-${x.blue}${loserTb(x)}`)).concat(s.endedBy !== 'score' && (pp ? s.points.red || s.points.blue : s.games.red || s.games.blue) ? [pp ? `${s.points.red}-${s.points.blue}` : `${s.games.red}-${s.games.blue}`] : []).join(' · ')} · ${fmt(elapsed())}</p>
         ${heardButton()}
         <div class="row"><button class="btn ghost" data-act="undo" type="button">${icon('undo')} ${esc(t(TEXT.undoLast))}</button>
+        ${Fx ? `<button class="btn" data-act="share" type="button">📤 ${esc(t(TEXT.share))}</button>` : ''}
         <button class="btn go" data-act="save" type="button">${esc(t(TEXT.save))}</button></div>
         </div>
       </div>`;
@@ -777,6 +806,22 @@
         ${m.pausedAt && !s.finished ? `<button class="m-overlay" data-act="resume" type="button"><b>⏸ ${esc(t(TEXT.paused))}</b><span>${esc(t(TEXT.tapResume))}</span></button>` : ''}
         ${!unlocked ? `<button class="m-overlay" data-act="unlock" type="button"><b>${BALL}</b><span>${esc(t(m.stack.length ? TEXT.tapContinue : TEXT.tapStart))}</span></button>` : ''}`;
       paintBolo();
+      const d = Scoring.display(s), g = (team) => (s.tiebreak === 'stb' ? '–' : String(s.games[team]));
+      shown = { red: { pts: String(d.red), games: g('red') }, blue: { pts: String(d.blue), games: g('blue') } };
+      rollDir = 'up';
+    }
+    // The finished match as the data of the share card (fx.js).
+    function cardData() {
+      const s = m.state;
+      const cols = s.sets.map((x) => (x.kind === 'stb' ? { red: x.tb.red, blue: x.tb.blue } : { red: x.red, blue: x.blue }));
+      const rest = pp ? s.points : s.games;
+      if (s.endedBy !== 'score' && (rest.red || rest.blue)) cols.push({ red: rest.red, blue: rest.blue });
+      return {
+        sport: pp ? 'pingpong' : 'padel', winner: s.winner, cols, red: teamLabel('red'), blue: teamLabel('blue'),
+        title: s.winner === 'draw' ? t(TEXT.draw) : t(TEXT.winner).replace('{t}', teamLabel(s.winner)),
+        date: new Date(m.startedAt).toLocaleDateString(VOICE_LANG[getLang()], { day: 'numeric', month: 'short', year: 'numeric' }),
+        meta: `${Math.max(1, Math.round(elapsed() / 60000))} min`,
+      };
     }
 
     // ---------- input ----------
@@ -815,6 +860,7 @@
       // ignore clicks in the first moment so it does not close itself.
       else if (act === 'close-summary') { if (summary && Date.now() - summary.at > 800) hideSummary(); }
       else if (act === 'more-time') playOn(Number(b.dataset.min));
+      else if (act === 'share') Fx?.share(cardData());
       else if (act === 'heard') { showHeard = true; render(); }
       else if (act === 'close-heard') { showHeard = false; render(); }
       else if (act === 'copy-heard') copyHeard(b, m);
@@ -867,6 +913,8 @@
     if (unlocked) {
       startListening();
       if (!m.stack.length) speak(startLine());
+      // A match just started from the Start tap: draw the court and send the ball to the server's half.
+      if (!m.stack.length && Date.now() - m.startedAt < 4000) setTimeout(() => { if (!closed) Fx?.courtIntro(el, Scoring.server(m.state).team, pp ? 'pp' : ''); }, 60);
     }
     return { close, rerender: () => { listener?.setLang(getLang()); render(); } };
   }

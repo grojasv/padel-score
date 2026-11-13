@@ -2,7 +2,7 @@
 // Needs `npm install` once. Real mouse taps (pointerdown and click, as a finger sends them), a fake speech
 // recognizer for the voice path, and a check that nothing is cut off at the sizes in CLAUDE.md.
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { join, dirname, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
@@ -37,7 +37,7 @@ const fakeSpeech = () => {
     r.onresult?.({ resultIndex: r.results.length - 1, results: r.results });
   };
 };
-const SETUP = { mode: 'singles', deuce: 'advantage', muted: true, voiceInput: true, timeLimit: 90, names: { red: ['', ''], blue: ['', ''] } };
+const SETUP = { mode: 'singles', deuce: 'advantage', muted: true, voiceInput: true, timeLimit: 90, names: { red: ['', ''], blue: ['Maximiliano Fernández', ''] } }; // a long name: it must be cut, not push the layout
 
 const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 let passed = 0, failed = 0;
@@ -81,24 +81,33 @@ async function fits(page, selectors, where, { scrolls = false } = {}) {
       if (!r.width || !r.height) continue; // hidden at this size
       const text = `${sel} «${e.textContent.trim().slice(0, 20)}»`;
       if (r.left < -1 || r.right > W + 1 || (!scrolls && (r.top < -1 || r.bottom > H + 1))) out.push(`${text} leaves the screen (${Math.round(r.left)},${Math.round(r.top)} to ${Math.round(r.right)},${Math.round(r.bottom)})`);
-      if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push(`${text} is cut (${e.scrollWidth}px in ${e.clientWidth}px)`);
+      if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible' && getComputedStyle(e).textOverflow !== 'ellipsis') out.push( // an ellipsis is a cut on purpose (a long name)
+        `${text} is cut (${e.scrollWidth}px in ${e.clientWidth}px)`);
     }
     return out;
   }, [selectors, scrolls]);
   assert.deepEqual(bad, [], where);
 }
-const BOARD = ['.m-bubble', '.h-points', '.h-games', '.h-name', '.m-clock', '.undo-big', '.more', '.mic'];
+const BOARD = ['.m-bubble', '.h-streak', '.h-points', '.h-games', '.h-name', '.m-clock', '.undo-big', '.more', '.mic'];
 const SUMMARY = ['.s-title', '.s-team b', '.s-team small', '.s-label'];
 
 // ---------- the scoreboard, landscape, both phone sizes, light and dark ----------
 for (const [width, height] of [[568, 320], [844, 390]]) for (const dark of [false, true]) {
   await test('padel: a game, the summary, deuce, undo, reload', { width, height, dark }, async (page) => {
     await start(page);
+    assert.equal(await page.locator('.fx-court path').count(), 5, 'the court is drawn at the start');
     await fits(page, BOARD, 'board at 0-0, clock 1:29:59');
     assert.match(await page.locator('.m-clock').textContent(), /^1:\d\d:\d\d$/, 'the 90 min clock shows hours');
 
-    for (let i = 0; i < 4; i++) await tap(page, 'red'); // game to red
+    for (let i = 0; i < 3; i++) await tap(page, 'red');
+    assert.equal(await page.locator('.half.h-red .r-old').getAttribute('data-v'), '30', 'the old number rolls out');
+    assert.equal(await page.locator('.half.h-red .h-points').textContent(), '40', 'the text is only the new number');
+    assert.equal((await page.locator('.half.h-red .h-streak').textContent()).trim(), '🔥 3', '3 in a row: the flame');
+    assert.equal(await page.locator('.half.h-blue .h-streak').count(), 0);
+    await fits(page, BOARD, 'board at 40-0 with the flame');
+    await tap(page, 'red'); // game to red
     assert.deepEqual((await state(page)).state.games, { red: 1, blue: 0 });
+    assert.equal(await page.locator('.fx-confetti i').count(), 28, 'confetti for a game');
     await page.locator('.m-sum').waitFor({ timeout: 500 }); // the same tap must not close it
     await fits(page, SUMMARY, 'game summary');
     await page.waitForTimeout(1500);
@@ -112,6 +121,9 @@ for (const [width, height] of [[568, 320], [844, 390]]) for (const dark of [fals
 
     await page.locator('[data-act=undo]').click();
     assert.equal(await page.locator('.half.h-red .h-points').textContent(), '40', 'undo takes AD back');
+    assert.equal(await page.locator('.half.h-red .h-points.down .r-old').getAttribute('data-v'), 'AD', 'an undo rolls the other way');
+    assert.equal(await page.locator('.half.h-red .h-streak').count(), 0, 'the undone point is out of the streak');
+    assert.equal((await page.locator('.half.h-blue .h-streak').textContent()).trim(), '🔥 3', 'green\'s 3 in a row are the last points again');
 
     const before = await state(page);
     await page.reload();
@@ -155,7 +167,10 @@ await test('voice: «rojo» and «verde» score, a tap is counted apart, the log
 for (const [width, height] of [[320, 568], [390, 844]]) for (const dark of [false, true]) {
   await test('ping pong to 6: finish, history row with the voice share, hub fits', { width, height, dark, setup: { sport: 'pingpong', ppMode: 'singles', ppBestOf: 6 } }, async (page) => {
     await page.goto(URL_);
-    await fits(page, ['.btn', '.sec', '.brand', '.langs'], 'hub, no history', { scrolls: true });
+    await page.locator('.hero').waitFor();
+    assert.ok(await page.evaluate(() => document.documentElement.classList.contains('intro')), 'the intro plays when the app opens');
+    await page.waitForFunction(() => !document.documentElement.classList.contains('intro'), null, { timeout: 3000 });
+    await fits(page, ['.btn', '.sec', '.brand', '.langs', '.hero', '.bubble'], 'hub, no history', { scrolls: true });
     await start(page);
     await page.waitForFunction(() => document.querySelector('.mic')?.dataset.state === 'listening', null, { timeout: 3000 });
     for (let i = 0; i < 2; i++) { await page.evaluate(() => window.__say('rojo')); await page.waitForTimeout(1600); } // the same word twice within 1.5 s counts once
@@ -168,12 +183,21 @@ for (const [width, height] of [[320, 568], [390, 844]]) for (const dark of [fals
     for (let i = 0; i < 3; i++) await tap(page, 'red');
     await page.locator('.m-finish').waitFor();
     await fits(page, ['.m-finish h2', '.m-finish .btn'], 'finish panel');
+    assert.equal(await page.locator('.fx-confetti i').count(), 140, 'confetti for the match');
+    const saved = page.waitForEvent('download'); // no share sheet in this browser: the card is saved as an image
+    await page.locator('.m-finish [data-act=share]').click();
+    const file = await saved;
+    assert.equal(file.suggestedFilename(), 'padel-score.png');
+    assert.ok((await stat(await file.path())).size > 20000, 'the card is a real image');
     await page.goto(`${URL_}#/`);
     const row = page.locator('.history li').first();
     await row.waitFor();
-    assert.match(await row.innerText(), /6-0/);
+    assert.ok(!(await page.evaluate(() => document.documentElement.classList.contains('intro'))), 'the intro plays once per app open');
+    assert.equal(await row.getAttribute('class'), 'w-red', 'the winner\'s colour is on the card');
+    assert.equal((await row.locator('.h-row.won .h-sets').innerText()).trim(), '6');
+    assert.equal((await row.locator('.h-row:not(.won) .h-sets').innerText()).trim(), '0');
     assert.match(await row.locator('.h-voice').innerText(), /🎙 33% · –/, '2 of red\'s 6 points by voice');
-    await fits(page, ['.history li', '.h-voice', '.h-heard', '.btn', '.brand', '.langs'], 'hub with history', { scrolls: true });
+    await fits(page, ['.history li', '.h-row', '.h-voice', '.h-heard', '.h-share', '.btn', '.brand', '.langs'], 'hub with history', { scrolls: true });
     await row.locator('.h-heard').click();
     assert.match(await page.locator('.heard-modal .h-stats').innerText(), /Rojo: 🎙 2 · 👆 4 · ⌚ 0 \(33% por voz\)/);
     await fits(page, ['.heard-modal .h-box'], 'heard log from the history');

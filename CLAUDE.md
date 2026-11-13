@@ -8,6 +8,7 @@ Phone scoreboard for padel and tennis, run by Bolo (a padel ball mascot) with vo
 - `scoring.js`: pure padel scoring engine (UMD, no DOM). Every rule change gets a test in `scripts/test-scoring.mjs`.
 - `pingpong.js`: ping pong engine with the same API (`Match.engine(setup)` picks one by `setup.sport`). Tests in `scripts/test-pingpong.mjs`.
 - `match.js`: the scoreboard, undo/edit, clock, voice out. `voice.js`: speech recognition and command matching.
+- `fx.js`: effects that never block a tap: vibration, confetti, the court drawn at match start, the share card (canvas). All motion is off under `prefers-reduced-motion`.
 - `mascot.js`: Bolo as SVG (UMD, reused by `scripts/make-icons.mjs`). Original design: no third-party character names or references anywhere.
 - `data/lines.json`: Bolo's lines.
 

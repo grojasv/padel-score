@@ -73,5 +73,10 @@
     "es": ["¡Enhorabuena, campeones!", "Partidazo. Choca esas palas.", "¡Qué nivel! Hasta la próxima."],
     "ca": ["Enhorabona, campions!", "Partidàs. Xoqueu aquestes pales.", "Quin nivell! Fins a la propera."],
     "en": ["Congratulations, champions!", "Great match. Tap those bats.", "What a level! See you next time."]
+  },
+  "streak": {
+    "es": ["¡En racha!", "¡Cinco seguidos!", "¡Imparable!"],
+    "ca": ["En ratxa!", "Cinc seguits!", "Imparable!"],
+    "en": ["On fire!", "Five in a row!", "Unstoppable!"]
   }
 }
