@@ -102,7 +102,7 @@ for (const [width, height] of [[568, 320], [844, 390]]) for (const dark of [fals
     for (let i = 0; i < 3; i++) await tap(page, 'red');
     assert.equal(await page.locator('.half.h-red .r-old').getAttribute('data-v'), '30', 'the old number rolls out');
     assert.equal(await page.locator('.half.h-red .h-points').textContent(), '40', 'the text is only the new number');
-    assert.equal((await page.locator('.half.h-red .h-streak').textContent()).trim(), '🔥 3', '3 in a row: the flame');
+    assert.equal((await page.locator('.half.h-red .h-streak').textContent()).trim(), '🔥3', '3 in a row: the flame');
     assert.equal(await page.locator('.half.h-blue .h-streak').count(), 0);
     await fits(page, BOARD, 'board at 40-0 with the flame');
     await tap(page, 'red'); // game to red
@@ -123,7 +123,7 @@ for (const [width, height] of [[568, 320], [844, 390]]) for (const dark of [fals
     assert.equal(await page.locator('.half.h-red .h-points').textContent(), '40', 'undo takes AD back');
     assert.equal(await page.locator('.half.h-red .h-points.down .r-old').getAttribute('data-v'), 'AD', 'an undo rolls the other way');
     assert.equal(await page.locator('.half.h-red .h-streak').count(), 0, 'the undone point is out of the streak');
-    assert.equal((await page.locator('.half.h-blue .h-streak').textContent()).trim(), '🔥 3', 'green\'s 3 in a row are the last points again');
+    assert.equal((await page.locator('.half.h-blue .h-streak').textContent()).trim(), '🔥3', 'green\'s 3 in a row are the last points again');
 
     const before = await state(page);
     await page.reload();

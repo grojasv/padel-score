@@ -2,6 +2,17 @@
 
 All notable changes to Padel Score. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/). New feature = minor, fix or content tweak = patch.
 
+## [0.11.2] - 2026-11-13
+### Fixed
+(Found by playing ping pong matches at 844×390, 568×320 and 390×844.)
+- **«¡Gana Verde!» and green's row in the set scores were still blue.** They are green.
+- **An undo left the old badge** («Cambio de campo») on the board for a few seconds.
+- **Powered-up Bolo covered the badge** («Bola de partido»). He grows less (1.25 instead of 1.4) and the streak flame hides while his hair is gold. Upright he no longer leaves the screen.
+- **The streak count touched the games box** at 10 in a row on a small phone. The flame now sits above the number.
+- **The first bubble cut the server's name** («¡Que empiece el partido! Saca…»). Bolo says who serves first.
+- **A change of ends in the middle of a game said «Cambio de campo» twice** on the summary.
+- **Upright, Bolo's dark hollow spilled** onto the half above the band.
+
 ## [0.11.1] - 2026-11-13
 ### Changed
 - **The middle band of the scoreboard is the net.** It has a mesh pattern and each side fades into the colour of the half next to it, so it no longer looks like a separate box. The clock and the mic sit on the net's white tape, Bolo rests in a soft hollow of the mesh, and the undo and ••• buttons have the same white edge.

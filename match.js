@@ -257,7 +257,7 @@
     const names = (team) => (m.setup.names?.[team] || []).filter(Boolean);
     const teamLabel = (team) => (names(team).length ? names(team).join(' · ') : t(TEXT[team]));
     const serverLabel = () => { const sv = Scoring.server(m.state); return names(sv.team)[sv.player] || t(TEXT[sv.team]); };
-    const startLine = () => `${line('start')} ${t(TEXT.serves).replace('{t}', serverLabel())}.`;
+    const startLine = () => `${t(TEXT.serves).replace('{t}', serverLabel())}. ${line('start')}`;
 
     // ---------- lines ----------
     function line(key, vars = {}) {
@@ -395,6 +395,7 @@
       markFinished();
       save();
       undoSound();
+      flash = null; clearTimeout(flashTimer);
       Fx?.buzz([15, 40, 15]);
       rollDir = 'down';
       setMood('sad', 900);
@@ -584,7 +585,7 @@
         <span class="s-title c-${team}">${esc(title)}</span>
         <span class="s-teams">${sides().map((x) => `<span class="s-team c-${x}${x === team ? ' won' : ''}"><small>${esc(teamLabel(x))}</small><b>${big(x)}</b></span>`).join('')}</span>
         <span class="s-label">${esc(label)}${games ? ` · ${esc(games)}` : ''}</span>
-        ${events.includes('changeEnds') ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
+        ${events.includes('changeEnds') && (setEnd || gameEnd) ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
         <span class="s-serve">🏓 ${esc(t(TEXT.serves).replace('{t}', serverLabel()))}</span>
       </button>`;
       }
@@ -594,7 +595,7 @@
         <span class="s-title c-${team}">${esc(title)}</span>
         <span class="s-teams">${sides().map((x) => `<span class="s-team c-${x}${x === team ? ' won' : ''}"><small>${esc(teamLabel(x))}</small><b>${big(x)}</b></span>`).join('')}</span>
         <span class="s-label">${esc(label)}${done && !setEnd ? ` · ${esc(t(TEXT.sets))} ${esc(done)}` : setEnd ? ` · ${esc(done)}` : ''}${now ? ` · ${esc(now)}` : ''}</span>
-        ${events.includes('changeEnds') ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
+        ${events.includes('changeEnds') && (setEnd || gameEnd) ? `<span class="s-change">⇄ ${esc(t(TEXT.change))}</span>` : ''}
         <span class="s-serve">🎾 ${esc(t(TEXT.serves).replace('{t}', serverLabel()))}</span>
       </button>`;
     }
@@ -703,7 +704,7 @@
         <span class="h-serve${serving ? '' : ' off'}">${BALL} ${esc(serving ? svName || t(TEXT.server) : t(TEXT.server))}</span>
         <span class="h-points${pts === 'AD' ? ' adv' : ''}${rollDir === 'down' ? ' down' : ''}">${roll}</span>
         <span class="h-games"><small>${esc(t(TEXT.games))}</small> <b${was && was.games !== games ? ' class="pop"' : ''}>${games}</b></span>
-        ${sk && sk.team === team ? `<span class="h-streak" aria-hidden="true">🔥 ${sk.n}</span>` : ''}
+        ${sk && sk.team === team ? `<span class="h-streak" aria-hidden="true"><span>🔥</span><span>${sk.n}</span></span>` : ''}
       </button>`;
     }
     function setsTable() {

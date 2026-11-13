@@ -90,11 +90,11 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 24px; }
 @keyframes crackle { 0% { opacity: 1; } 50% { opacity: 0.2; } }
 /* Powered up (gold hair): bigger, stays in front of the board. powering = the moment it happens. */
 .centre .bolo-wrap { transition: transform 0.35s cubic-bezier(.3, 1.6, .5, 1); z-index: 2; }
-.centre .bolo-wrap.powered { transform: scale(1.4); }
+.centre .bolo-wrap.powered { transform: scale(1.25); }
 .centre .bolo-wrap.powering { animation: powerup 0.7s ease-out; }
 @keyframes powerup {
   0% { transform: scale(1); } 20% { transform: scale(1.7) rotate(-4deg); } 35% { transform: scale(1.5) rotate(4deg); }
-  50% { transform: scale(1.6) rotate(-3deg); } 70% { transform: scale(1.45) rotate(2deg); } 100% { transform: scale(1.4); }
+  50% { transform: scale(1.6) rotate(-3deg); } 70% { transform: scale(1.35) rotate(2deg); } 100% { transform: scale(1.25); }
 }
 .power-flash { position: fixed; inset: 0; z-index: 50; pointer-events: none; background: radial-gradient(circle, #fff 0%, #ffe066 45%, #ffcf24 100%); opacity: 0; animation: powerflash 0.7s ease-out; }
 @keyframes powerflash { 0% { opacity: 0.95; } 25% { opacity: 0; } 45% { opacity: 0.8; } 100% { opacity: 0; } }
@@ -257,8 +257,10 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .h-games b.pop { display: inline-block; animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes pop { from { transform: scale(1.9); color: var(--gold); } }
 /* 3 or more points in a row: a flame with the count in the corner of that half, and one on Bolo. */
-.h-streak { position: absolute; right: clamp(10px, 3vh, 24px); bottom: clamp(10px, 3vh, 24px); font-weight: 800; font-size: clamp(14px, 6vh, 40px); line-height: 1; white-space: nowrap; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); animation: pop 0.4s cubic-bezier(.3, 1.6, .5, 1); }
+.h-streak { position: absolute; right: clamp(8px, 2.6vh, 24px); bottom: clamp(10px, 3vh, 24px); display: flex; flex-direction: column; align-items: center; font-weight: 800; font-size: clamp(13px, 5vh, 34px); line-height: 1.05; white-space: nowrap; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); animation: pop 0.4s cubic-bezier(.3, 1.6, .5, 1); }
 .centre .bolo-wrap.onfire::after { content: '🔥'; position: absolute; right: -22%; top: -8%; font-size: clamp(14px, 6vh, 30px); line-height: 1; animation: flicker 0.5s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+/* Gold hair already says it: no flame on top of the badge. */
+.centre .bolo-wrap.powered.onfire::after { display: none; }
 @keyframes flicker { from { transform: scale(0.9) rotate(-6deg); } to { transform: scale(1.15) rotate(6deg); } }
 .h-games { font-size: clamp(22px, 17vh, 150px); line-height: 1.1; font-weight: 800; background: rgba(0, 0, 0, 0.3); padding: 0 0.4em; border-radius: 0.3em; font-variant-numeric: tabular-nums; }
 .h-games b { font-weight: 700; }
@@ -302,7 +304,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .sets { border-collapse: collapse; font-weight: 800; font-size: clamp(15px, 6.5vh, 40px); font-variant-numeric: tabular-nums; }
 .sets td { padding: 1px 8px; text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.2); }
 .sets td:first-child { border-left: 0; }
-.sets .r td { color: #ff8a93; } .sets .b td { color: #8ab8ff; }
+.sets .r td { color: #ff8a93; } .sets .b td { color: #4ade80; }
 .sets sup { font-size: 0.6em; }
 .m-badge { min-height: 1.3em; font-weight: 800; color: var(--gold); text-transform: uppercase; font-size: clamp(13px, 5.5vh, 34px); line-height: 1.1; text-align: center; }
 .centre .bolo-wrap { width: min(70%, 13vh, 84px); width: min(70%, 13svh, 84px); flex: 0 1 auto; cursor: pointer; } /* svh: the height left by the browser bars */
@@ -356,7 +358,7 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
 .m-finish, .m-edit { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(8, 14, 32, 0.88); }
 .m-finish { flex-direction: column; text-align: center; gap: 6px; }
 .m-finish h2 { margin: 0; font-family: Bungee, Rubik, sans-serif; font-weight: 400; font-size: clamp(26px, 11vh, 56px); }
-.m-finish.c-red h2 { color: #ff8a93; } .m-finish.c-blue h2 { color: #8ab8ff; }
+.m-finish.c-red h2 { color: #ff8a93; } .m-finish.c-blue h2 { color: #4ade80; }
 .m-finish p { margin: 0; font-size: clamp(14px, 5vh, 22px); }
 .m-finish .final { font-weight: 800; font-variant-numeric: tabular-nums; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
@@ -387,6 +389,9 @@ body.playing .top, body.playing main, body.playing .foot { display: none; }
   .centre { --net-dir: 180deg; display: grid; grid-template-columns: 70px 1fr; grid-template-areas: 'bolo top' 'bolo sets' 'bolo badge' 'tools tools' 'bubble bubble' 'hint hint'; align-items: center; gap: 4px 10px; padding: 6px 10px; }
   .c-top { grid-area: top; align-self: center; justify-self: start; margin: 0; padding: 2px 12px; border-radius: 999px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); } .sets { grid-area: sets; } .m-badge { grid-area: badge; text-align: left; }
   .centre .bolo-wrap { grid-area: bolo; width: 70px; padding-top: 14px; }
+  .centre .bolo-wrap::before { display: none; } /* the hollow would spill onto the half above */
+  .centre .bolo-wrap.powered { transform: scale(1.12); transform-origin: 30% 60%; }
+  .h-streak { flex-direction: row; gap: 0.25em; font-size: clamp(16px, 6vw, 30px); }
   .c-tools { grid-area: tools; }
   .m-bubble { grid-area: bubble; }
   .m-clock { font-size: 24px; }
